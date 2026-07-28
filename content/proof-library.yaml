@@ -1,0 +1,138 @@
+# Single source of truth for Uday's proof content. Hand-edited only.
+# Metrics are VERBATIM strings — the pipeline selects and frames entries but
+# never rewrites a number. Lines marked "VERIFY" rendered as animated-counter
+# zeros during extraction and need Uday's real values.
+
+profile:
+  positioning: "Fractional CMO. Strategy & architecture — the operator layer underneath the team you're building."
+  locationLine: "Pune based. Same time zone, in-person working sessions, no coordination tax."
+  calUrl: "https://cal.com/uday-kang/15min"
+  repoLinks:
+    - "https://github.com/udaykang-byte/gtm-flywheel"
+    - "https://github.com/udaykang-byte/gtm-os-kit"
+
+caseStudies:
+  - id: dailypay
+    client: "DailyPay"
+    verticalTags: [fintech, b2b-saas, enterprise, hr-tech]
+    motionTags: [outbound, abm, demand-gen]
+    problem: "Fill enterprise pipeline for an earned wage access platform selling into Retail, QSR, and Hospitality employers with long sales cycles, tight ICP, and multiple stakeholders."
+    approach: "Account scoring blending fit, intent, and engagement with buyer-group detection; sequenced email + LinkedIn + programmatic/CTV orchestration; gated content feeding a nurture-to-demo motion; multi-touch attribution with holdout testing; full deliverability governance (opt-in, suppression, SPF/DKIM/DMARC)."
+    metrics:
+      - { value: "2,700+", label: "Demos booked" }
+      - { value: "$3.3M+", label: "Pipeline influenced" }
+
+  - id: sk-trading
+    client: "SK Trading Live"
+    verticalTags: [consumer, creator, community, finance-education]
+    motionTags: [content, retention, founder-brand]
+    problem: "Subscription community with product-market fit but no system behind it: founder-dependent growth, ad hoc content, revenue that didn't compound."
+    approach: "Content operating system (repeatable formats, hooks, cadence); funnel rebuild from social touch to paid subscription with retention flows; offer and pricing restructure; migrated 358 active subscriptions across billing entities with zero disruption."
+    metrics:
+      - { value: "$12K→$35K", label: "MRR in under 90 days" }
+      - { value: "28%→11%", label: "Churn, same window" }
+      - { value: "10K→200K+", label: "Social followers in three months" }
+      - { value: "0", label: "Members lost during migration" }
+
+  - id: nutrius
+    client: "Nutrius"
+    verticalTags: [d2c, ecommerce, skincare, consumer]
+    motionTags: [paid-media, creators, retention, ctv]
+    problem: "Expand digital footprint across Shopify and Amazon in a crowded skincare market while keeping a unified brand and design system."
+    approach: "Multi-channel management (Meta, Google, Amazon, influencer, TV/CTV); email and SMS automation with segmentation; 70+ creator partnerships; national TV and CTV rollout (29M+ impressions); cohesive modular design system."
+    metrics:
+      - { value: "2.5x", label: "ROAS across paid" }
+      - { value: "+33%", label: "AOV lift" }
+      - { value: "132.6%", label: "MoM online visibility growth" }
+      - { value: "-37.7%", label: "Amazon ACoS" }
+      - { value: "-15%", label: "Cart abandonment" }
+      # VERIFY: Rare Ideas deck also shows Sales increase %, Meta+Google ROAS,
+      # Amazon ROAS, and CLV metrics that extracted as zeros (animated
+      # counters). Add them here with real values if wanted.
+
+  - id: white-van
+    client: "Legion M — The Man in the White Van"
+    verticalTags: [entertainment, national-us, b2c]
+    motionTags: [paid-media, ctv, awareness]
+    problem: "Build nationwide awareness for a theatrical thriller and convert to ticket sales across audiences from TikTok to prime-time CTV with a coherent creative system."
+    approach: "Media across YouTube, Meta, TikTok, CTV, Linear TV, Programmatic, and Atom; YouTube 1.47M trailer views at $0.03 CPV; Meta 4.22M impressions at 6.2% CTR and $0.11 CPC; ~12M CTV/Linear impressions at 99% completion; influencer amplification 533.8K views."
+    metrics:
+      - { value: "33.1M+", label: "Total impressions nationwide" }
+      - { value: "306K+", label: "Clicks to ticketing CTAs" }
+      - { value: "1.36M", label: "Trailer views" }
+      # VERIFY: total video views and engagement-vs-benchmark extracted as
+      # zeros (animated counters).
+
+  - id: geofencing-fnb
+    client: "Multi-brand F&B portfolio"
+    verticalTags: [f-and-b, local, retail]
+    motionTags: [programmatic, geofencing]
+    problem: "45-day campaign to drive qualified foot traffic across three F&B brands."
+    approach: "Served ads to people near competitor restaurants, target-neighbourhood residents, and wedding-venue prospects via owned programmatic infrastructure."
+    metrics:
+      - { value: "287K", label: "Targeted impressions" }
+      - { value: "$0.73", label: "eCPC, verified first-party clicks" }
+      - { value: "65%", label: "Audience GA missed" }
+
+plays:
+  - id: signal-outbound
+    name: "Signal-based outbound"
+    whenTags: [outbound, b2b, sales-team]
+    steps:
+      - "Self-scraped hiring, funding, tech-stack, and job-post signals."
+      - "Outreach triggers the week the buying window opens."
+
+  - id: linkedin-pipeline
+    name: "LinkedIn engagement to pipeline"
+    whenTags: [founder-brand, b2b, content]
+    steps:
+      - "Founder-led content engineered for reach."
+      - "Commenters and profile visitors enriched, scored, and routed into follow-up."
+
+  - id: ctv-abm
+    name: "CTV + ABM air cover"
+    whenTags: [enterprise, abm, paid-media]
+    steps:
+      - "Programmatic and Connected TV aimed at named target accounts."
+      - "Outbound works the same list while air cover runs."
+
+  - id: content-flywheel
+    name: "Content flywheel + lead magnets"
+    whenTags: [content, inbound, brand]
+    steps:
+      - "Branded PDF assets and carousels on a locked design system."
+      - "Distributed organically, captured through gated downloads, nurtured to a call."
+
+  - id: lean-outbound-stack
+    name: "The lean outbound stack"
+    whenTags: [outbound, infrastructure, deliverability]
+    steps:
+      - "Owned infrastructure: TAM discovery, waterfall enrichment, dedicated inboxes, sequencing."
+      - "Fully compliant with post-Google/Microsoft sender enforcement."
+
+platforms:
+  - id: influencer-platform
+    name: "Influencer Management Platform"
+    description: "Influencer discovery + ops: sourcing, briefs, contracts, tracked attribution, and performance reads — all on one rail."
+    link: "https://www.yadainfluencer.com/"
+    metrics: []
+
+  - id: programmatic-dsp
+    name: "Programmatic Advertising Platform (DSP/SSP)"
+    description: "Owned programmatic infrastructure: display, video & CTV."
+    link: "https://www.yadamedia.io/programmatic-advertising"
+    metrics: []
+
+plan30day:
+  - title: "Audit"
+    deliverables:
+      - "Full review across the business: client base, revenue mix, delivery process, team structure, current tools."
+  - title: "Architect"
+    deliverables:
+      - "SOPs for delivery. A client workflow the team can scale without losing quality."
+  - title: "Automate"
+    deliverables:
+      - "Three to five workflows built, tested, and shipped in week one: research, reporting, CRM enrichment, and outbound signal monitoring."
+  - title: "Align"
+    deliverables:
+      - "Outbound sequences live for the pipeline. Hiring JDs refined against the actual operating model."
