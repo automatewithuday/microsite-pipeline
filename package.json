@@ -21,6 +21,7 @@
     "better-sqlite3": "^13.0.1",
     "dotenv": "^16.4.5",
     "playwright": "^1.48.0",
+    "yaml": "^2.9.0",
     "zod": "^3.23.8",
     "zod-to-json-schema": "^3.25.2"
   },
