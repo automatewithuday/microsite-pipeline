@@ -158,16 +158,24 @@ function isSatisfied(step: StepModule, stepStatus: Record<string, { state: StepS
 
 /**
  * True when at least one registered step on this lead is not yet "done" or
- * "skipped" (including steps that never ran, or that ended in "error" and
- * are therefore due for an automatic retry on the next batch run). Used by
- * scripts/run.ts to select rows for `--batch`.
+ * "skipped" (including steps that never ran, ended in "error" and are due
+ * for an automatic retry on the next batch run, or sit "blocked" behind an
+ * errored dependency). `extraStepNames` lets the caller include steps that
+ * live outside the DAG registry — scripts/run.ts passes its post-pass names
+ * ("derived", "render") so a lead whose DAG finished but whose render
+ * errored is still selected by `--batch`.
  */
-export function isLeadPending(lead: LeadRow, steps: StepModule[]): boolean {
+export function isLeadPending(
+  lead: LeadRow,
+  steps: StepModule[],
+  extraStepNames: string[] = []
+): boolean {
   const stepStatus = (lead.step_status ?? {}) as Record<string, { state?: StepState }>;
-  return steps.some((step) => {
-    const state = stepStatus[step.name]?.state;
+  const pending = (name: string): boolean => {
+    const state = stepStatus[name]?.state;
     return state !== "done" && state !== "skipped";
-  });
+  };
+  return steps.some((step) => pending(step.name)) || extraStepNames.some(pending);
 }
 
 function nowIso(): string {
@@ -213,10 +221,15 @@ export async function runStepsForLead(
         return s !== "done" && s !== "skipped";
       });
       const reason = `blocked: dependency "${blockers.join('", "')}" not done or skipped`;
-      await persistence.markStep(leadId, step.name, { state: "skipped", error: reason });
+      // "blocked", not "skipped": a skip satisfies dependents (graceful
+      // degradation), but a block must cascade, or grandchildren would run
+      // against missing data and freeze degraded output as "done". A blocked
+      // step is re-attempted on the next pass, once the errored dependency's
+      // retry has had its chance.
+      await persistence.markStep(leadId, step.name, { state: "blocked", error: reason });
       workingLead.step_status = {
         ...workingLead.step_status,
-        [step.name]: { state: "skipped", at: nowIso(), error: reason },
+        [step.name]: { state: "blocked", at: nowIso(), error: reason },
       };
       continue;
     }

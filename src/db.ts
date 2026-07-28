@@ -7,7 +7,10 @@
 
 import "dotenv/config";
 
-export type StepState = "done" | "error" | "skipped";
+// "skipped" is an intentional outcome (missing key, gate miss) that dependents
+// may build on; "blocked" means a dependency errored, so dependents must wait
+// for the retry instead of running against missing data.
+export type StepState = "done" | "error" | "skipped" | "blocked";
 
 export interface StepStatusEntry {
   state: StepState;

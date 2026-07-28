@@ -211,9 +211,67 @@ describe("runStepsForLead", () => {
 
     expect(persistence.stateFor("company")).toBe("error");
     expect(dependentRan).toBe(false);
-    expect(persistence.stateFor("crm")).toBe("skipped");
+    // "blocked", not "skipped": an intentional skip satisfies dependents (the
+    // deck degrades gracefully), but a block from an errored dependency must
+    // not — otherwise grandchildren run against missing data and mark
+    // themselves permanently "done".
+    expect(persistence.stateFor("crm")).toBe("blocked");
 
     vi.useRealTimers();
+  });
+
+  it("does not run grandchildren of an errored step: a blocked dependency blocks its own dependents", async () => {
+    vi.useFakeTimers();
+    const persistence = new FakePersistence();
+    const failing: StepModule = {
+      name: "person",
+      column: "person",
+      dependsOn: [],
+      run: async () => {
+        throw new Error("provider outage");
+      },
+    };
+    const child = successStep("company", "company_data", ["person"]);
+    let grandchildRan = false;
+    const grandchild: StepModule = {
+      name: "ads",
+      column: "ads",
+      dependsOn: ["company"],
+      run: async () => {
+        grandchildRan = true;
+        return { data: { count: 0 }, cost_usd: 0, provider: "fake" };
+      },
+    };
+
+    const promise = runStepsForLead(makeLead(), [failing, child, grandchild], persistence);
+    await vi.advanceTimersByTimeAsync(15_000); // exhaust person's 2s+8s backoff
+    await promise;
+
+    expect(persistence.stateFor("person")).toBe("error");
+    expect(persistence.stateFor("company")).toBe("blocked");
+    // The grandchild must not run against missing company data and freeze a
+    // fabricated zero-count as "done".
+    expect(grandchildRan).toBe(false);
+    expect(persistence.stateFor("ads")).toBe("blocked");
+
+    vi.useRealTimers();
+  });
+
+  it("re-attempts a previously blocked step once its dependency recovers on a later pass", async () => {
+    const persistence = new FakePersistence();
+    const upstream = successStep("company", "company_data"); // recovered: succeeds now
+    const dependent = successStep("crm", "crm", ["company"]);
+    const lead = makeLead({
+      step_status: {
+        company: { state: "error", at: "t", error: "outage" },
+        crm: { state: "blocked", at: "t", error: 'blocked: dependency "company" not done or skipped' },
+      },
+    });
+
+    await runStepsForLead(lead, [upstream, dependent], persistence);
+
+    expect(persistence.stateFor("company")).toBe("done");
+    expect(persistence.stateFor("crm")).toBe("done");
   });
 
   it("marks a NonRetryableError as error immediately, without waiting out the retry backoff", async () => {
@@ -379,6 +437,50 @@ describe("isLeadPending", () => {
       },
     });
     expect(isLeadPending(lead, steps)).toBe(false);
+  });
+
+  it("is true when a step is blocked (its dependency errored)", () => {
+    const lead = makeLead({
+      step_status: {
+        a: { state: "error", at: "t", error: "boom" },
+        b: { state: "blocked", at: "t", error: "blocked" },
+      },
+    });
+    expect(isLeadPending(lead, steps)).toBe(true);
+  });
+
+  it("is true when the DAG is done but an extra (post-pass) step errored", () => {
+    const lead = makeLead({
+      step_status: {
+        a: { state: "done", at: "t" },
+        b: { state: "done", at: "t" },
+        derived: { state: "done", at: "t" },
+        render: { state: "error", at: "t", error: "browser not found" },
+      },
+    });
+    expect(isLeadPending(lead, steps, ["derived", "render"])).toBe(true);
+  });
+
+  it("is true when the DAG is done but an extra (post-pass) step never ran", () => {
+    const lead = makeLead({
+      step_status: {
+        a: { state: "done", at: "t" },
+        b: { state: "done", at: "t" },
+      },
+    });
+    expect(isLeadPending(lead, steps, ["derived", "render"])).toBe(true);
+  });
+
+  it("is false when the DAG and every extra step are done or skipped", () => {
+    const lead = makeLead({
+      step_status: {
+        a: { state: "done", at: "t" },
+        b: { state: "done", at: "t" },
+        derived: { state: "done", at: "t" },
+        render: { state: "skipped", at: "t", error: "gate: tam missing" },
+      },
+    });
+    expect(isLeadPending(lead, steps, ["derived", "render"])).toBe(false);
   });
 });
 

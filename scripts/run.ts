@@ -76,7 +76,9 @@ async function fetchLeadById(id: string): Promise<LeadRow> {
 }
 
 async function fetchPendingBatch(limit: number): Promise<LeadRow[]> {
-  return state.listPending(limit, (lead) => isLeadPending(lead, STEPS));
+  // Include the post-passes so a lead whose DAG finished but whose render
+  // errored (e.g. Chromium missing on the first run) is still selected.
+  return state.listPending(limit, (lead) => isLeadPending(lead, STEPS, POST_PASS_STEP_NAMES));
 }
 
 // Title-cases a domain's base label so an ANTHROPIC-only run has a readable
