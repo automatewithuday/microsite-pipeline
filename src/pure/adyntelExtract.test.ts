@@ -88,3 +88,26 @@ describe("extractDataforseoTraffic", () => {
     expect(extractDataforseoTraffic(raw)).toBeNull();
   });
 });
+
+describe("extractAdyntelAdCount (facebook object shape, live cyndx.com 2026-07-29)", () => {
+  it("reads number_of_ads from the adyntel_facebook object payload", () => {
+    expect(
+      extractAdyntelAdCount({
+        page_id: "398280784063059",
+        is_result_complete: true,
+        number_of_ads: 0,
+        count_landing_pages: 0,
+        unique_landing_pages: [],
+        results: [],
+      })
+    ).toBe(0);
+  });
+
+  it("prefers number_of_ads over results length", () => {
+    expect(extractAdyntelAdCount({ number_of_ads: 7, results: [{}] })).toBe(7);
+  });
+
+  it("falls back to results array length when no count field exists", () => {
+    expect(extractAdyntelAdCount({ results: [{}, {}, {}] })).toBe(3);
+  });
+});

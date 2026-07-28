@@ -1,10 +1,11 @@
 // Extraction of the Deepline-native fallback payloads for steps 04/05 when
 // Apify is unavailable (e.g. monthly usage limit). No I/O, no LLM calls.
 //
-// Shapes confirmed live against coldiq.com (2026-07-28):
+// Shapes confirmed live against coldiq.com (2026-07-28) and cyndx.com (2026-07-29):
 //   adyntel_google   raw: { ads, continuation_token, total_ad_count }
 //   adyntel_linkedin raw: { page_id, total_ads, ads, is_last_page, ... }
-//   adyntel_facebook raw: "" (empty string when the domain has no Meta ads)
+//   adyntel_facebook raw: "" (empty string, coldiq.com) OR
+//     { page_id, number_of_ads, results, ... } (object, cyndx.com)
 //   dataforseo_dataforseo_labs_google_domain_rank_overview_live raw:
 //     { tasks: [{ result: [{ items: [{ metrics: { organic: { etv }, paid: { etv } } }] }] }] }
 //
@@ -35,11 +36,12 @@ export function extractAdyntelAdCount(raw: unknown): number | null {
   }
   if (!isRecord(raw)) return null;
 
-  for (const field of ["total_ad_count", "total_ads"]) {
+  for (const field of ["total_ad_count", "total_ads", "number_of_ads"]) {
     const value = raw[field];
     if (typeof value === "number" && Number.isFinite(value)) return value;
   }
   if (Array.isArray(raw.ads)) return raw.ads.length;
+  if (Array.isArray(raw.results)) return raw.results.length;
   return null;
 }
 
