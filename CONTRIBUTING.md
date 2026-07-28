@@ -22,7 +22,7 @@ npm run typecheck
 npm test
 ```
 
-Both must pass. CI runs exactly these two commands on Node 20.
+Both must pass. CI runs exactly these two commands on Node 22 (the pipeline itself supports Node 20+).
 
 ## How the code is organized
 
