@@ -19,6 +19,7 @@ import logo from "./09_logoUrl.js";
 import tam from "./10_tam.js";
 import icpSegments from "./11_icpSegments.js";
 import salesSignals from "./12_salesSignals.js";
+import followupNarrative from "./13_followupNarrative.js";
 
 export const STEPS: StepModule[] = [
   person,
@@ -36,4 +37,5 @@ export const STEPS: StepModule[] = [
   tam,
   icpSegments,
   salesSignals,
+  followupNarrative,
 ];
