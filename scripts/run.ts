@@ -4,7 +4,7 @@
 // npx tsx scripts/run.ts --lead-url <linkedin> --name "<name>" --company <domain>
 //                                                             # seed + run one ad-hoc lead (no CSV)
 
-import { DEEPLINE_API_KEY, type LeadRow } from "../src/db.js";
+import { DEEPLINE_API_KEY, assertRequiredEnv, type LeadRow } from "../src/db.js";
 import { applyDerived } from "../src/derivedRoutine.js";
 import { normalizeDomain, toHttpUrl } from "../src/pure/normalize.js";
 import { applyRender } from "../src/render.js";
@@ -164,6 +164,10 @@ async function main(): Promise<void> {
     Boolean
   ).length;
   if (modes > 1) printUsageAndExit("--lead-url, --lead, and --batch are mutually exclusive");
+
+  // After arg validation (usage/help must work keyless), before any mode
+  // spends money: fail fast naming every missing required var at once.
+  assertRequiredEnv();
 
   if (args.leadUrl !== undefined) {
     if (!args.leadUrl) printUsageAndExit("--lead-url requires a LinkedIn URL");

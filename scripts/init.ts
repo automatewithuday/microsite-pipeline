@@ -5,7 +5,7 @@
 // process.env with the same defaults db.ts uses.
 
 import "dotenv/config";
-import { copyFileSync, existsSync, mkdirSync } from "node:fs";
+import { chmodSync, copyFileSync, existsSync, mkdirSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { openLocalDb } from "../src/state/localDb.js";
@@ -20,6 +20,7 @@ function main(): void {
     console.log(".env already exists, leaving it untouched.");
   } else if (existsSync(examplePath)) {
     copyFileSync(examplePath, envPath);
+    chmodSync(envPath, 0o600); // will hold real keys — same mode the wizard uses
     console.log("Created .env from .env.example. Fill in ANTHROPIC_API_KEY (and any optional keys).");
   } else {
     console.log("No .env.example found, skipping .env creation.");

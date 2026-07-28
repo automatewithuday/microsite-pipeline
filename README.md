@@ -184,7 +184,7 @@ npm test
 
 ## How it works
 
-The pipeline is a dependency-ordered DAG. Each step writes its raw output and records its state (`done` / `error` / `skipped`) plus cost. Reruns only re-execute failed or missing steps, so the expensive research step never repeats unnecessarily.
+The pipeline is a dependency-ordered DAG. Each step writes its raw output and records its state (`done` / `error` / `skipped` / `blocked`) plus cost — `blocked` marks a step waiting on an errored dependency, retried automatically on the next run. Reruns only re-execute failed or missing steps, so the expensive research step never repeats unnecessarily.
 
 ```mermaid
 flowchart TD

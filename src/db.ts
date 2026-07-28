@@ -84,10 +84,21 @@ export const DEEPLINE_API_KEY = optional("DEEPLINE_API_KEY") ?? "";
 export const APIFY_TOKEN = optional("APIFY_TOKEN") ?? "";
 export const FIRECRAWL_API_KEY = optional("FIRECRAWL_API_KEY") ?? "";
 
-// Fail fast, naming every missing required var at once (never a value). Only
-// the reduced, mode-dependent required set can appear here.
-if (missingRequired.length > 0) {
-  throw new Error(`Missing required environment variable(s): ${missingRequired.join(", ")}`);
+/**
+ * Fails fast before a pipeline run, naming every missing required var at once
+ * (never a value). Only the reduced, mode-dependent required set can appear
+ * here. Deliberately a function rather than an import-time throw: scripts
+ * that never call the LLM (serve, seed) must load keyless, so only
+ * scripts/run.ts calls this before doing real work. The providers still
+ * guard their own keys at call time as a second line of defense.
+ */
+export function assertRequiredEnv(): void {
+  if (missingRequired.length > 0) {
+    throw new Error(
+      `Missing required environment variable(s): ${missingRequired.join(", ")}. ` +
+        "Run `npm run setup`, or edit .env (see .env.example)."
+    );
+  }
 }
 
 // ---------------------------------------------------------------------
