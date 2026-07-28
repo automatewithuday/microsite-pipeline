@@ -4,7 +4,7 @@ import type { LeadRow } from "../db.js";
 const { runActorMock } = vi.hoisted(() => ({ runActorMock: vi.fn() }));
 
 vi.mock("../providers/apify.js", () => ({ runActor: (...args: unknown[]) => runActorMock(...args) }));
-vi.mock("../db.js", () => ({ APIFY_ACTOR_LINKEDIN_ADS: "test-linkedin-ads-actor", APIFY_TOKEN: "test-token" }));
+vi.mock("../db.js", () => ({ ADS_TRAFFIC_PROVIDER: "auto", DEEPLINE_API_KEY: "", APIFY_ACTOR_LINKEDIN_ADS: "test-linkedin-ads-actor", APIFY_TOKEN: "test-token" }));
 
 import step from "./05_adsLinkedin.js";
 
@@ -57,7 +57,7 @@ describe("step 05 ads_linkedin", () => {
   // out, and lands in "error" — which blocks sales_signals and kills the deck.
   it("missing = 0: no APIFY_TOKEN means count 0 without calling the actor", async () => {
     vi.resetModules();
-    vi.doMock("../db.js", () => ({ APIFY_ACTOR_LINKEDIN_ADS: "test-linkedin-ads-actor", APIFY_TOKEN: "" }));
+    vi.doMock("../db.js", () => ({ ADS_TRAFFIC_PROVIDER: "auto", DEEPLINE_API_KEY: "", APIFY_ACTOR_LINKEDIN_ADS: "test-linkedin-ads-actor", APIFY_TOKEN: "" }));
     const { default: tokenlessStep } = await import("./05_adsLinkedin.js");
 
     const result = await tokenlessStep.run(makeLead("Smartlead"));

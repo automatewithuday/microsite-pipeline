@@ -58,7 +58,7 @@ describe("step 09 logo (BRANDFETCH_API_KEY unset -> fallback path)", () => {
     expect(fetchBrandfetchLogosMock).not.toHaveBeenCalled();
   });
 
-  it("finds og:image first", async () => {
+  it("uses og:image when the page has no header logo", async () => {
     vi.stubGlobal(
       "fetch",
       stubFetch({
@@ -68,6 +68,26 @@ describe("step 09 logo (BRANDFETCH_API_KEY unset -> fallback path)", () => {
     const result = await step.run(makeLead("acme.com"));
     if (!("data" in result)) throw new Error("expected data");
     expect(result.data).toMatchObject({ url: "https://acme.com/og.png", source_page: "og:image", format: "png" });
+  });
+
+  it("prefers the header logo img over og:image when both exist (og:image is usually a share banner, not a logo)", async () => {
+    vi.stubGlobal(
+      "fetch",
+      stubFetch({
+        "https://acme.com": `<html><head><meta property="og:image" content="https://acme.com/og-banner.png"></head><body><header><img src="https://acme.com/logo.svg" alt="Acme"></header></body></html>`,
+      })
+    );
+    const result = await step.run(makeLead("acme.com"));
+    if (!("data" in result)) throw new Error("expected data");
+    expect(result.data).toMatchObject({ url: "https://acme.com/logo.svg", source_page: "header_img" });
+    // Both candidates stay recorded for auditability.
+    const raw = (result.data as { raw: { candidates: unknown[] } }).raw;
+    expect(raw.candidates).toEqual(
+      expect.arrayContaining([
+        { source: "og:image", url: "https://acme.com/og-banner.png" },
+        { source: "header_img", url: "https://acme.com/logo.svg" },
+      ])
+    );
   });
 
   it("stores the raw fetched HTML and the candidate list on the fallback path (auditable without re-scraping)", async () => {

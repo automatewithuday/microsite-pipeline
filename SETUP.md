@@ -172,6 +172,7 @@ Every optional key fills in more of the deck. You never have to add them up fron
 flowchart LR
     K1["ANTHROPIC_API_KEY<br/><sub>required</sub>"] --> D1["research · TAM<br/>ICP · signals"]
     K2["DEEPLINE_API_KEY"] --> D2["person · company<br/>founders · SDR count"]
+    K2 --> D3
     K3["APIFY_TOKEN"] --> D3["traffic<br/>ad counts"]
     K4["FIRECRAWL_API_KEY"] --> D4["better CRM detect<br/>colors · logo"]
     K5["BRANDFETCH_API_KEY"] --> D5["cleaner logo"]
@@ -183,6 +184,8 @@ flowchart LR
 ```
 
 To add one, either re-run `npm run setup` (it offers to overwrite `.env`, defaulting to *no*), or open `.env` and fill the value in directly. Then re-run `npm run doctor` to confirm the step flipped from SKIP to RUN.
+
+**Traffic + ad counts run through either provider.** `DEEPLINE_API_KEY` alone covers them via Deepline's native DataForSEO and Adyntel tools — no Apify account or actor picks needed. With both keys set, `ADS_TRAFFIC_PROVIDER` in `.env` picks the route: `auto` (default — Apify first, Deepline fallback), `apify`, or `deepline`. The doctor's step-plan table shows which route is live.
 
 ---
 

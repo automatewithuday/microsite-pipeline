@@ -16,6 +16,7 @@ function isSet(name: string): boolean {
 
 const LLM_PROVIDER = process.env.LLM_PROVIDER || "api";
 const RESEARCH_PROVIDER = process.env.RESEARCH_PROVIDER || "claude";
+const ADS_TRAFFIC_PROVIDER = process.env.ADS_TRAFFIC_PROVIDER || "auto";
 
 // Required set, mode-dependent (mirrors src/db.ts).
 function requiredVars(): string[] {
@@ -48,14 +49,32 @@ function stepPlan(): Array<{ step: string; run: boolean; note: string }> {
   const research = researchReady();
 
   const actor = (name: string) => apify && isSet(name);
+
+  // One 04/05 row honoring ADS_TRAFFIC_PROVIDER: "deepline" ignores Apify,
+  // "apify" ignores Deepline, "auto" is Apify-with-Deepline-fallback.
+  const adsRow = (label: string, actorVar: string, deeplineTool: string) => {
+    const viaApify = actor(actorVar);
+    if (ADS_TRAFFIC_PROVIDER === "deepline") {
+      return { step: label, run: deepline, note: deepline ? `Deepline (${deeplineTool})` : "ADS_TRAFFIC_PROVIDER=deepline needs DEEPLINE_API_KEY" };
+    }
+    if (ADS_TRAFFIC_PROVIDER === "apify") {
+      return { step: label, run: viaApify, note: viaApify ? "Apify" : `needs APIFY_TOKEN + ${actorVar}` };
+    }
+    return {
+      step: label,
+      run: viaApify || deepline,
+      note: viaApify ? (deepline ? "Apify, Deepline fallback" : "Apify") : deepline ? `Deepline (${deeplineTool})` : `needs APIFY_TOKEN + ${actorVar} or DEEPLINE_API_KEY`,
+    };
+  };
+
   const plan: Array<{ step: string; run: boolean; note: string }> = [
     { step: "person (01)", run: deepline, note: deepline ? "Deepline" : "needs DEEPLINE_API_KEY" },
     { step: "company (02)", run: deepline, note: deepline ? "Deepline" : "needs DEEPLINE_API_KEY (or a seeded --company domain)" },
     { step: "crm (03)", run: true, note: firecrawl ? "plain fetch + Firecrawl fallback" : "plain fetch only" },
-    { step: "traffic (04)", run: actor("APIFY_ACTOR_SIMILARWEB"), note: actor("APIFY_ACTOR_SIMILARWEB") ? "Apify" : "needs APIFY_TOKEN + APIFY_ACTOR_SIMILARWEB" },
-    { step: "ads_meta (05)", run: actor("APIFY_ACTOR_META_ADS"), note: actor("APIFY_ACTOR_META_ADS") ? "Apify" : "needs APIFY_TOKEN + APIFY_ACTOR_META_ADS" },
-    { step: "ads_google (05)", run: actor("APIFY_ACTOR_GOOGLE_ADS"), note: actor("APIFY_ACTOR_GOOGLE_ADS") ? "Apify" : "needs APIFY_TOKEN + APIFY_ACTOR_GOOGLE_ADS" },
-    { step: "ads_linkedin (05)", run: actor("APIFY_ACTOR_LINKEDIN_ADS"), note: actor("APIFY_ACTOR_LINKEDIN_ADS") ? "Apify" : "needs APIFY_TOKEN + APIFY_ACTOR_LINKEDIN_ADS" },
+    adsRow("traffic (04)", "APIFY_ACTOR_SIMILARWEB", "DataForSEO"),
+    adsRow("ads_meta (05)", "APIFY_ACTOR_META_ADS", "Adyntel"),
+    adsRow("ads_google (05)", "APIFY_ACTOR_GOOGLE_ADS", "Adyntel"),
+    adsRow("ads_linkedin (05)", "APIFY_ACTOR_LINKEDIN_ADS", "Adyntel"),
     { step: "founders (06)", run: deepline, note: deepline ? "Deepline" : "needs DEEPLINE_API_KEY" },
     { step: "sdr (06)", run: deepline, note: deepline ? "Deepline" : "needs DEEPLINE_API_KEY" },
     { step: "research (07)", run: research.ok, note: research.ok ? `via ${RESEARCH_PROVIDER}` : `needs ${research.why}` },
@@ -82,7 +101,7 @@ async function checkBackend(): Promise<{ ok: boolean; message: string }> {
 }
 
 async function main(): Promise<void> {
-  console.log(`Switches:  LLM_PROVIDER=${LLM_PROVIDER}  RESEARCH_PROVIDER=${RESEARCH_PROVIDER}\n`);
+  console.log(`Switches:  LLM_PROVIDER=${LLM_PROVIDER}  RESEARCH_PROVIDER=${RESEARCH_PROVIDER}  ADS_TRAFFIC_PROVIDER=${ADS_TRAFFIC_PROVIDER}\n`);
 
   const required = requiredVars();
   const missing = required.filter((v) => !isSet(v));

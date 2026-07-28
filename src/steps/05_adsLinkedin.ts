@@ -10,10 +10,17 @@
 // the count is a floor (a heavy advertiser reads "N+"). Pay-per-record means a
 // light advertiser stays cheap regardless of the cap.
 
-import { APIFY_ACTOR_LINKEDIN_ADS, APIFY_TOKEN, type LeadRow } from "../db.js";
+import {
+  ADS_TRAFFIC_PROVIDER,
+  APIFY_ACTOR_LINKEDIN_ADS,
+  APIFY_TOKEN,
+  DEEPLINE_API_KEY,
+  type LeadRow,
+} from "../db.js";
 import { type StepModule, type StepResult } from "../pipeline.js";
 import { extractLinkedInAdCount } from "../pure/adsExtract.js";
 import { runActor } from "../providers/apify.js";
+import { runAdyntelFallback } from "./05_adsShared.js";
 
 // Per-lead ad cap. Pay-per-record, so this bounds cost for unusually heavy
 // advertisers (e.g. cal.com runs 100+ LinkedIn ads); typical companies run far
@@ -21,21 +28,42 @@ import { runActor } from "../providers/apify.js";
 const MAX_LINKEDIN_ADS = 100;
 
 async function run(lead: LeadRow): Promise<StepResult> {
-  const companyData = lead.company_data as { merged?: { name?: unknown } } | null | undefined;
+  const companyData = lead.company_data as
+    | { merged?: { name?: unknown; domain?: unknown } }
+    | null
+    | undefined;
   const companyName = typeof companyData?.merged?.name === "string" ? companyData.merged.name : null;
+  const domain = typeof companyData?.merged?.domain === "string" ? companyData.merged.domain : null;
+
+  // Explicit route: "deepline" never touches Apify; "apify" never touches
+  // Deepline; "auto" (default) prefers Apify with the Deepline fallback.
+  if (ADS_TRAFFIC_PROVIDER === "deepline") {
+    if (DEEPLINE_API_KEY && domain) return runAdyntelFallback("adyntel_linkedin", domain);
+    return { data: { count: 0, raw: [] }, cost_usd: 0, provider: "deepline:adyntel_linkedin" };
+  }
+  const deeplineFallback = ADS_TRAFFIC_PROVIDER === "auto" && DEEPLINE_API_KEY;
 
   if (!APIFY_TOKEN || !APIFY_ACTOR_LINKEDIN_ADS || !companyName) {
+    if (deeplineFallback && domain) return runAdyntelFallback("adyntel_linkedin", domain);
     return { data: { count: 0, raw: [] }, cost_usd: 0, provider: "apify:linkedin_ads" };
   }
 
   // Account-scoped Ad Library search URL (fuzzy on LinkedIn's side; the
   // extractor filters to the company's own advertiser).
   const url = `https://www.linkedin.com/ad-library/search?accountOwner=${encodeURIComponent(companyName)}`;
-  const { items, runCost_usd } = await runActor(
-    APIFY_ACTOR_LINKEDIN_ADS,
-    { urls: [{ url }], maxRecords: MAX_LINKEDIN_ADS },
-    { timeoutMs: 180_000 }
-  );
+  let items: unknown[];
+  let runCost_usd: number | null;
+  try {
+    ({ items, runCost_usd } = await runActor(
+      APIFY_ACTOR_LINKEDIN_ADS,
+      { urls: [{ url }], maxRecords: MAX_LINKEDIN_ADS },
+      { timeoutMs: 180_000 }
+    ));
+  } catch (err) {
+    // Apify unavailable (e.g. monthly usage hard limit): Adyntel via Deepline.
+    if (deeplineFallback && domain) return runAdyntelFallback("adyntel_linkedin", domain);
+    throw err;
+  }
 
   const data: Record<string, unknown> = { count: extractLinkedInAdCount(items, companyName), raw: items };
   if (runCost_usd === null) data.cost_unknown = true;

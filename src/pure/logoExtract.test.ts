@@ -1,5 +1,7 @@
 import { describe, expect, it } from "vitest";
-import { extractAnyLogoImg, extractHeaderLogoImg, extractOgImage, selectBrandfetchLogo } from "./logoExtract.js";
+import { extractAnyLogoImg, extractHeaderLogoImg, extractOgImage, selectBrandfetchLogo,
+  selectBrandfetchLogoByTheme,
+} from "./logoExtract.js";
 
 describe("extractOgImage", () => {
   it("extracts og:image content", () => {
@@ -89,5 +91,29 @@ describe("selectBrandfetchLogo (Brandfetch v2 logos[].formats[] shape)", () => {
 
   it("returns null when logos exist but none has a usable formats[].src", () => {
     expect(selectBrandfetchLogo([{ type: "logo", theme: "dark", formats: [] }])).toBeNull();
+  });
+});
+
+describe("selectBrandfetchLogoByTheme", () => {
+  const logos = [
+    { type: "logo", theme: "dark", formats: [{ src: "https://cdn.bf/dark-logo.svg", format: "svg" }] },
+    { type: "logo", theme: "light", formats: [{ src: "https://cdn.bf/light-logo.png", format: "png" }, { src: "https://cdn.bf/light-logo.svg", format: "svg" }] },
+    { type: "icon", theme: "dark", formats: [{ src: "https://cdn.bf/dark-icon.svg", format: "svg" }] },
+  ];
+
+  it("returns the best candidate per theme (wordmark over icon, svg over png)", () => {
+    const byTheme = selectBrandfetchLogoByTheme(logos);
+    expect(byTheme.dark?.url).toBe("https://cdn.bf/dark-logo.svg");
+    expect(byTheme.light?.url).toBe("https://cdn.bf/light-logo.svg");
+  });
+
+  it("returns null for a theme with no candidates", () => {
+    const byTheme = selectBrandfetchLogoByTheme([logos[0]!]);
+    expect(byTheme.dark?.url).toBe("https://cdn.bf/dark-logo.svg");
+    expect(byTheme.light).toBeNull();
+  });
+
+  it("returns both null on an empty list", () => {
+    expect(selectBrandfetchLogoByTheme([])).toEqual({ dark: null, light: null });
   });
 });

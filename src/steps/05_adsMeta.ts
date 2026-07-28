@@ -13,10 +13,17 @@
 // the step times out, and land in "error" — which blocks sales_signals and
 // costs the lead its deck.
 
-import { APIFY_ACTOR_META_ADS, APIFY_TOKEN, type LeadRow } from "../db.js";
+import {
+  ADS_TRAFFIC_PROVIDER,
+  APIFY_ACTOR_META_ADS,
+  APIFY_TOKEN,
+  DEEPLINE_API_KEY,
+  type LeadRow,
+} from "../db.js";
 import { type StepModule, type StepResult } from "../pipeline.js";
 import { extractMetaAdCount } from "../pure/adsExtract.js";
 import { runActor } from "../providers/apify.js";
+import { runAdyntelFallback } from "./05_adsShared.js";
 
 const RESULTS_LIMIT = 100;
 
@@ -33,15 +40,32 @@ async function run(lead: LeadRow): Promise<StepResult> {
   const name = typeof companyData?.merged?.name === "string" ? companyData.merged.name.trim() : "";
   const domain = typeof companyData?.merged?.domain === "string" ? companyData.merged.domain : null;
 
+  // Explicit route: "deepline" never touches Apify; "apify" never touches
+  // Deepline; "auto" (default) prefers Apify with the Deepline fallback.
+  if (ADS_TRAFFIC_PROVIDER === "deepline") {
+    if (DEEPLINE_API_KEY && domain) return runAdyntelFallback("adyntel_facebook", domain);
+    return { data: { count: 0, raw: [] }, cost_usd: 0, provider: "deepline:adyntel_facebook" };
+  }
+  const deeplineFallback = ADS_TRAFFIC_PROVIDER === "auto" && DEEPLINE_API_KEY;
+
   if (!APIFY_TOKEN || !APIFY_ACTOR_META_ADS || !name) {
+    if (deeplineFallback && domain) return runAdyntelFallback("adyntel_facebook", domain);
     return { data: { count: 0, raw: [] }, cost_usd: 0, provider: "apify:meta_ads" };
   }
 
-  const { items, runCost_usd } = await runActor(
-    APIFY_ACTOR_META_ADS,
-    { startUrls: [{ url: adLibrarySearchUrl(name) }], resultsLimit: RESULTS_LIMIT },
-    { timeoutMs: 100_000 }
-  );
+  let items: unknown[];
+  let runCost_usd: number | null;
+  try {
+    ({ items, runCost_usd } = await runActor(
+      APIFY_ACTOR_META_ADS,
+      { startUrls: [{ url: adLibrarySearchUrl(name) }], resultsLimit: RESULTS_LIMIT },
+      { timeoutMs: 100_000 }
+    ));
+  } catch (err) {
+    // Apify unavailable (e.g. monthly usage hard limit): Adyntel via Deepline.
+    if (deeplineFallback && domain) return runAdyntelFallback("adyntel_facebook", domain);
+    throw err;
+  }
 
   const data: Record<string, unknown> = { count: extractMetaAdCount(items, domain, name), raw: items };
   if (runCost_usd === null) data.cost_unknown = true;

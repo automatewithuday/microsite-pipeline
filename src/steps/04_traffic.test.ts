@@ -8,6 +8,8 @@ vi.mock("../providers/apify.js", () => ({
 }));
 
 vi.mock("../db.js", () => ({
+  ADS_TRAFFIC_PROVIDER: "auto",
+  DEEPLINE_API_KEY: "",
   APIFY_ACTOR_SIMILARWEB: "test-similarweb-actor",
   APIFY_TOKEN: "test-token",
 }));
@@ -71,8 +73,10 @@ describe("step 04 traffic", () => {
   it("skips when APIFY_TOKEN is absent, without calling the actor", async () => {
     vi.resetModules();
     vi.doMock("../db.js", () => ({
+  ADS_TRAFFIC_PROVIDER: "auto",
       APIFY_ACTOR_SIMILARWEB: "test-similarweb-actor",
       APIFY_TOKEN: "",
+      DEEPLINE_API_KEY: "",
     }));
     const { default: tokenlessStep } = await import("./04_traffic.js");
 

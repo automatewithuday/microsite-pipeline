@@ -397,6 +397,19 @@ async function main(): Promise<void> {
         const similarweb = await ask(rl, "  APIFY_ACTOR_SIMILARWEB (optional):");
         if (similarweb) values.APIFY_ACTOR_SIMILARWEB = similarweb;
       }
+      if (values.DEEPLINE_API_KEY || values.APIFY_TOKEN) {
+        const adsRoute = await askChoice(
+          rl,
+          "\n  Traffic + ad counts (steps 04/05) can run through either provider.\n  Which route do you want?",
+          [
+            { value: "auto", label: "Auto — Apify when configured, Deepline as fallback. Recommended." },
+            { value: "apify", label: "Apify only — never call Deepline for these steps." },
+            { value: "deepline", label: "Deepline only — DataForSEO + Adyntel tools, no Apify actors needed." },
+          ],
+          "auto"
+        );
+        if (adsRoute !== "auto") values.ADS_TRAFFIC_PROVIDER = adsRoute;
+      }
       values.FIRECRAWL_API_KEY = await askKey(rl, {
         name: "FIRECRAWL_API_KEY",
         what: "stronger CRM detection, brand colors, logo scraping",

@@ -1,5 +1,13 @@
 import { describe, expect, it } from "vitest";
-import { icpSegmentsSchema, salesSignalsSchema, tamSchema, wordCount } from "./aiSchemas.js";
+import {
+  icpSegmentsJsonSchema,
+  icpSegmentsSchema,
+  salesSignalsJsonSchema,
+  salesSignalsSchema,
+  tamJsonSchema,
+  tamSchema,
+  wordCount,
+} from "./aiSchemas.js";
 
 const segment = {
   segmentName: "Mid-market SaaS ops teams",
@@ -132,5 +140,33 @@ describe("salesSignalsSchema", () => {
   it("rejects an empty-string signal", () => {
     const result = salesSignalsSchema.safeParse({ signals: [shortSignal, shortSignal, ""] });
     expect(result.success).toBe(false);
+  });
+});
+
+describe("tool-use JSON schemas (Anthropic API path)", () => {
+  // The API enforces JSON Schema draft 2020-12, which forbids the draft-07
+  // array form of "items" (tuple syntax). zod-to-json-schema emits that form
+  // for z.tuple, and the API rejects the whole request with a 400
+  // (live-observed 2026-07-28 on sales_signals). Every tool schema must be
+  // free of array-form items anywhere in its tree.
+  function assertNoTupleItems(node: unknown, path: string): void {
+    if (Array.isArray(node)) {
+      node.forEach((child, i) => assertNoTupleItems(child, `${path}[${i}]`));
+      return;
+    }
+    if (typeof node !== "object" || node === null) return;
+    for (const [key, value] of Object.entries(node)) {
+      if (key === "items") expect(Array.isArray(value), `${path}.items is draft-07 tuple form`).toBe(false);
+      assertNoTupleItems(value, `${path}.${key}`);
+    }
+  }
+
+  it("salesSignalsJsonSchema is draft 2020-12 compatible (no tuple-form items)", () => {
+    assertNoTupleItems(salesSignalsJsonSchema, "salesSignals");
+  });
+
+  it("tamJsonSchema and icpSegmentsJsonSchema are draft 2020-12 compatible", () => {
+    assertNoTupleItems(tamJsonSchema, "tam");
+    assertNoTupleItems(icpSegmentsJsonSchema, "icpSegments");
   });
 });

@@ -128,24 +128,7 @@ function flattenLogos(logos: unknown[]): FlatCandidate[] {
   return out;
 }
 
-/**
- * Selection rules: full wordmark over icon,
- * prefer the dark-on-light variant, prefer svg > png > webp > jpg. Returns
- * null when the logo list is empty or no format has a usable src.
- */
-export function selectBrandfetchLogo(logos: unknown[]): SelectedLogo | null {
-  const candidates = flattenLogos(logos);
-  if (candidates.length === 0) return null;
-
-  const ranked = [...candidates].sort((a, b) => {
-    const typeDiff = rankOf(TYPE_RANK, a.type, 99) - rankOf(TYPE_RANK, b.type, 99);
-    if (typeDiff !== 0) return typeDiff;
-    const themeDiff = rankOf(THEME_RANK, a.theme, 99) - rankOf(THEME_RANK, b.theme, 99);
-    if (themeDiff !== 0) return themeDiff;
-    return rankOf(FORMAT_RANK, a.format, 99) - rankOf(FORMAT_RANK, b.format, 99);
-  });
-
-  const best = ranked[0];
+function toSelected(best: FlatCandidate | undefined): SelectedLogo | null {
   if (best === undefined) return null;
   return {
     url: best.src,
@@ -153,4 +136,39 @@ export function selectBrandfetchLogo(logos: unknown[]): SelectedLogo | null {
     variant: typeof best.type === "string" ? best.type : "unknown",
     theme: typeof best.theme === "string" ? best.theme : null,
   };
+}
+
+function rankCandidates(candidates: FlatCandidate[]): FlatCandidate[] {
+  return [...candidates].sort((a, b) => {
+    const typeDiff = rankOf(TYPE_RANK, a.type, 99) - rankOf(TYPE_RANK, b.type, 99);
+    if (typeDiff !== 0) return typeDiff;
+    const themeDiff = rankOf(THEME_RANK, a.theme, 99) - rankOf(THEME_RANK, b.theme, 99);
+    if (themeDiff !== 0) return themeDiff;
+    return rankOf(FORMAT_RANK, a.format, 99) - rankOf(FORMAT_RANK, b.format, 99);
+  });
+}
+
+/**
+ * Selection rules: full wordmark over icon,
+ * prefer the dark-on-light variant, prefer svg > png > webp > jpg. Returns
+ * null when the logo list is empty or no format has a usable src.
+ */
+export function selectBrandfetchLogo(logos: unknown[]): SelectedLogo | null {
+  return toSelected(rankCandidates(flattenLogos(logos))[0]);
+}
+
+/**
+ * Best candidate per theme so the renderer can pick the variant that suits
+ * the page background it lands on (theme "dark" = dark-colored, for light
+ * backgrounds; "light" = light-colored, for dark backgrounds). A theme with
+ * no candidates is null.
+ */
+export function selectBrandfetchLogoByTheme(logos: unknown[]): {
+  dark: SelectedLogo | null;
+  light: SelectedLogo | null;
+} {
+  const candidates = flattenLogos(logos);
+  const ofTheme = (theme: string) =>
+    toSelected(rankCandidates(candidates.filter((c) => typeof c.theme === "string" && c.theme.toLowerCase() === theme))[0]);
+  return { dark: ofTheme("dark"), light: ofTheme("light") };
 }

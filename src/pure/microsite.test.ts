@@ -9,6 +9,7 @@ import {
   pickReadableBrandBg,
   removeSlot,
   buildMicrositeHtml,
+  pickThemedLogoUrl,
 } from "./microsite.js";
 import type { LeadRow } from "../db.js";
 
@@ -410,5 +411,101 @@ describe("buildMicrositeHtml against the real committed template", () => {
     const out = buildMicrositeHtml(l, realTemplate);
     expect(out).not.toContain('data-slot="point1"');
     expect(out).toContain('data-slot="point2"');
+  });
+});
+
+describe("buildMicrositeHtml brand-color injection", () => {
+  // The real template keeps its <style> (with the cream defaults for
+  // --brand-primary/--brand-secondary) inside the BODY, not the head. At
+  // equal :root specificity the later rule wins, so the injected override
+  // must land after the template's own definition or the cream default
+  // silently wins (live-observed on the coldiq.com deck, 2026-07-28).
+  const BODY_STYLE_TEMPLATE = `<!doctype html><html><head></head><body>
+<helmet><style>
+:root{--cream:#F5EFE6;--brand-primary:var(--cream);--brand-secondary:var(--cream);}
+</style></helmet>
+<section data-label="Cover" style="background:var(--brand-primary)"><h1>[Company]</h1></section>
+</body></html>`;
+
+  function brandLead() {
+    return {
+      id: "id", company: "ColdIQ", qualified: true, step_status: {},
+      tam: { tamEstimation: 1 },
+      icp_segments: { segments: [] },
+      sales_signals: { signals: [] },
+      logo: { url: "" },
+      brand_colors: { primary: "#0B7BFA", secondary: "#F9962E" },
+      company_data: { merged: { name: "ColdIQ" } },
+      derived: {},
+    } as unknown as LeadRow;
+  }
+
+  it("injects the brand override AFTER the template's own :root definition", () => {
+    const out = buildMicrositeHtml(brandLead(), BODY_STYLE_TEMPLATE);
+    const overrideAt = out.lastIndexOf("--brand-primary: #0B7BFA");
+    const templateDefaultAt = out.indexOf("--brand-primary:var(--cream)");
+    expect(overrideAt).toBeGreaterThan(-1);
+    expect(templateDefaultAt).toBeGreaterThan(-1);
+    expect(overrideAt).toBeGreaterThan(templateDefaultAt);
+  });
+});
+
+describe("pickThemedLogoUrl", () => {
+  // Brandfetch semantics: theme "dark" = dark-colored logo for LIGHT
+  // backgrounds; theme "light" = light-colored logo for DARK backgrounds.
+  const logo = {
+    url: "https://cdn.bf/dark-logo.svg",
+    url_dark_theme: "https://cdn.bf/dark-logo.svg",
+    url_light_theme: "https://cdn.bf/light-logo.svg",
+  };
+
+  it("picks the light-theme (light-colored) logo on a dark brand background", () => {
+    expect(pickThemedLogoUrl(logo, "#0B7BFA")).toBe("https://cdn.bf/light-logo.svg");
+  });
+
+  it("picks the dark-theme (dark-colored) logo on a light background", () => {
+    expect(pickThemedLogoUrl(logo, "#F5EFE6")).toBe("https://cdn.bf/dark-logo.svg");
+  });
+
+  it("picks the dark-theme logo when no brand bg was chosen (cream default)", () => {
+    expect(pickThemedLogoUrl(logo, null)).toBe("https://cdn.bf/dark-logo.svg");
+  });
+
+  it("falls back to the base url when themed variants are absent (scrape path)", () => {
+    expect(pickThemedLogoUrl({ url: "https://acme.com/logo.svg" }, "#0B7BFA")).toBe("https://acme.com/logo.svg");
+  });
+
+  it("falls back to the other variant when the wanted theme is missing", () => {
+    expect(pickThemedLogoUrl({ url: "https://cdn.bf/d.svg", url_dark_theme: "https://cdn.bf/d.svg" }, "#0B7BFA")).toBe("https://cdn.bf/d.svg");
+  });
+
+  it("returns empty string when there is no logo at all", () => {
+    expect(pickThemedLogoUrl({}, "#0B7BFA")).toBe("");
+  });
+});
+
+describe("buildMicrositeHtml themed logo integration", () => {
+  it("uses the light-theme logo url when the injected brand bg is dark", () => {
+    const template = `<!doctype html><html><head></head><body>
+<section data-label="Cover"><div data-slot="logo"><img src="[LOGO_URL]"></div><h1>[Company]</h1></section>
+</body></html>`;
+    const lead = {
+      id: "id", company: "ColdIQ", qualified: true, step_status: {},
+      tam: { tamEstimation: 1 },
+      icp_segments: { segments: [] },
+      sales_signals: { signals: [] },
+      logo: {
+        url: "https://cdn.bf/dark-logo.svg",
+        url_dark_theme: "https://cdn.bf/dark-logo.svg",
+        url_light_theme: "https://cdn.bf/light-logo.svg",
+      },
+      brand_colors: { primary: "#0B7BFA", secondary: "#F9962E" },
+      company_data: { merged: { name: "ColdIQ" } },
+      derived: {},
+    } as unknown as LeadRow;
+
+    const out = buildMicrositeHtml(lead, template);
+    expect(out).toContain('src="https://cdn.bf/light-logo.svg"');
+    expect(out).not.toContain('src="https://cdn.bf/dark-logo.svg"');
   });
 });

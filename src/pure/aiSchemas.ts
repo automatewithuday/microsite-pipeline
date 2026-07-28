@@ -69,6 +69,15 @@ export type SalesSignalsResult = z.infer<typeof salesSignalsSchema>;
 // Tool-use input schemas for the Anthropic API path (LLM_PROVIDER=api).
 export const tamJsonSchema = toToolSchema(tamSchema);
 export const icpSegmentsJsonSchema = toToolSchema(icpSegmentsSchema);
-export const salesSignalsJsonSchema = toToolSchema(salesSignalsSchema);
+
+// The tool schema for sales_signals is built from an equivalent uniform-array
+// zod shape, NOT salesSignalsSchema itself: zod-to-json-schema emits z.tuple
+// as draft-07 array-form "items", which the Anthropic API rejects (it
+// enforces draft 2020-12; live-observed 400 on 2026-07-28). All three tuple
+// positions are identical strings, so array+min/max 3 expresses the same
+// shape; salesSignalsSchema remains the enforcing validator after parse.
+export const salesSignalsJsonSchema = toToolSchema(
+  z.object({ signals: z.array(z.string().min(1)).min(3).max(3) })
+);
 
 export { wordCount };

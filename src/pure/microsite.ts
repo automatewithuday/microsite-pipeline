@@ -220,6 +220,33 @@ export function pickReadableBrandBg(primary: string, secondary: string): string 
 }
 
 // ---------------------------------------------------------------------
+// Themed logo pick. Brandfetch theme "dark" = dark-colored logo, meant for
+// LIGHT backgrounds; "light" = light-colored, for DARK backgrounds.
+// ---------------------------------------------------------------------
+
+// Below this relative luminance a background counts as dark enough that the
+// dark-colored logo starts blending into it (live-observed with ColdIQ's
+// wordmark on its #0B7BFA brand blue, L~0.21; the cream default is ~0.87).
+const DARK_BG_LUMINANCE = 0.4;
+
+/**
+ * Picks the logo URL variant that suits the page background. `bgHex` is the
+ * brand color the cover will actually use, or null when the cream default
+ * stays. Falls back across variants, then the base url, then "".
+ */
+export function pickThemedLogoUrl(logo: Record<string, unknown>, bgHex: string | null): string {
+  const base = typeof logo.url === "string" ? logo.url : "";
+  const darkTheme = typeof logo.url_dark_theme === "string" ? logo.url_dark_theme : null;
+  const lightTheme = typeof logo.url_light_theme === "string" ? logo.url_light_theme : null;
+  if (!darkTheme && !lightTheme) return base;
+
+  const rgb = bgHex === null ? null : parseHex(bgHex);
+  const bgIsDark = rgb !== null && relativeLuminance(rgb) < DARK_BG_LUMINANCE;
+  const preferred = bgIsDark ? lightTheme : darkTheme;
+  return preferred ?? darkTheme ?? lightTheme ?? base;
+}
+
+// ---------------------------------------------------------------------
 // Optional-block removal. Depth-balanced tag scan.
 // ---------------------------------------------------------------------
 
@@ -273,19 +300,25 @@ export function buildMicrositeHtml(lead: LeadRow, templateHtml: string): string 
   const d = extractMicrositeData(lead);
   let html = templateHtml;
 
+  // The brand bg is computed up front: the logo variant depends on the
+  // background it will sit on (the style injection itself happens last).
+  const bg = pickReadableBrandBg(d.brandPrimary, d.brandSecondary);
+  const effectiveBg = bg && bg.toUpperCase() !== CREAM_DEFAULT ? bg : null;
+  const logoUrl = pickThemedLogoUrl(isRecord(lead.logo) ? lead.logo : {}, effectiveBg);
+
   // 1. Optional-block removal FIRST (before token replacement), so a removed
   //    block never leaves a dangling escaped value. An absent logo drops the
   //    logo slot entirely rather than rendering an empty <img src> (public
   //    build: logo is an optional step, never fabricated).
   if (d.point1 === null) html = removeSlot(html, "point1");
   if (d.point2 === null) html = removeSlot(html, "point2");
-  if (d.logoUrl === "") html = removeSlot(html, "logo");
+  if (logoUrl === "") html = removeSlot(html, "logo");
 
   // 2. Token replacements. Longest-prefix tokens first so e.g.
   //    "[Company Characteristic 1]" is replaced before "[Company]".
   const e = escapeHtml;
   const replacements: Array<[string, string]> = [
-    ["[LOGO_URL]", e(d.logoUrl)],
+    ["[LOGO_URL]", e(logoUrl)],
     ["[Company Characteristic 1]", e(d.segment1.companyCharacteristic)],
     ["[Company Characteristic 2]", e(d.segment2.companyCharacteristic)],
     ["[Company]", e(d.company)],
@@ -318,10 +351,12 @@ export function buildMicrositeHtml(lead: LeadRow, templateHtml: string): string 
   //    reference var(--brand-primary)/var(--brand-secondary); overriding the
   //    :root vars recolors exactly those three pages (2/4/6/7/8 never use them
   //    as a full-page background, so the default cream stays).
-  const bg = pickReadableBrandBg(d.brandPrimary, d.brandSecondary);
-  if (bg && bg.toUpperCase() !== CREAM_DEFAULT) {
-    const style = `<style>:root{--brand-primary: ${bg};--brand-secondary: ${bg};}</style>`;
-    html = html.replace(/<\/head>/i, `${style}</head>`);
+  //    The template's own <style> (cream defaults for the brand vars) lives in
+  //    the BODY, and at equal :root specificity the later rule wins -- so the
+  //    override must be appended at the end of the document, never the head.
+  if (effectiveBg) {
+    const style = `<style>:root{--brand-primary: ${effectiveBg};--brand-secondary: ${effectiveBg};}</style>`;
+    html = /<\/body>/i.test(html) ? html.replace(/<\/body>/i, `${style}</body>`) : html + style;
   }
 
   return html;

@@ -33,7 +33,7 @@ The Chromium install is a large download and only matters for the PDF step. The 
 
 1. **LLM provider** — `api` (an `ANTHROPIC_API_KEY`) or `claude_cli` (a local `claude` binary on a subscription).
 2. **Research backend** — `claude` (default, reuses the key above), `parallel`, or `perplexity`.
-3. **Optional provider keys** — Deepline, Apify, Firecrawl, Brandfetch. All skippable.
+3. **Optional provider keys** — Deepline, Apify, Firecrawl, Brandfetch. All skippable. When a Deepline or Apify key is given, it also asks the **traffic/ads route** (`ADS_TRAFFIC_PROVIDER`): `auto` (default — Apify first, Deepline-native DataForSEO/Adyntel fallback), `apify` only, or `deepline` only. A Deepline key alone covers traffic + all three ad channels.
 4. Writes `.env` (chmod 600), creates `./output` and the local database.
 
 Keys are verified against the real API as they're entered, so a typo or a revoked key surfaces immediately.
@@ -58,6 +58,7 @@ npx tsx scripts/serve.ts
 ## Interpreting the doctor output
 
 - **Lots of `SKIP`** — expected. Those providers' keys are absent; the deck renders at lower fidelity. Not an error.
+- **Traffic/ads rows** show the live route: "Apify", "Apify, Deepline fallback", or "Deepline (DataForSEO/Adyntel)" per `ADS_TRAFFIC_PROVIDER`.
 - **`RESULT: FAIL. Missing required var(s): ...`** — the named variable must be set for the chosen switches. Re-run the wizard or edit `.env`.
 - **`Render: the core AI steps ... can't all run`** — no deck will be produced. Almost always a missing or invalid `ANTHROPIC_API_KEY`.
 

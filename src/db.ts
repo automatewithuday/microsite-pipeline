@@ -84,6 +84,18 @@ export const DEEPLINE_API_KEY = optional("DEEPLINE_API_KEY") ?? "";
 export const APIFY_TOKEN = optional("APIFY_TOKEN") ?? "";
 export const FIRECRAWL_API_KEY = optional("FIRECRAWL_API_KEY") ?? "";
 
+// ADS_TRAFFIC_PROVIDER selects the route for traffic + ad counts (steps 04/05).
+//   "auto"     (default) — Apify when its token/actors are configured, with the
+//                          Deepline-native tools (DataForSEO, Adyntel) as the
+//                          fallback when Apify is unconfigured or errors.
+//   "apify"              — Apify only; never call Deepline for these steps.
+//   "deepline"           — Deepline-native tools only; Apify is never called.
+export const ADS_TRAFFIC_PROVIDER = optional("ADS_TRAFFIC_PROVIDER") ?? "auto";
+
+if (ADS_TRAFFIC_PROVIDER !== "auto" && ADS_TRAFFIC_PROVIDER !== "apify" && ADS_TRAFFIC_PROVIDER !== "deepline") {
+  throw new Error(`ADS_TRAFFIC_PROVIDER must be "auto", "apify", or "deepline", got "${ADS_TRAFFIC_PROVIDER}"`);
+}
+
 /**
  * Fails fast before a pipeline run, naming every missing required var at once
  * (never a value). Only the reduced, mode-dependent required set can appear

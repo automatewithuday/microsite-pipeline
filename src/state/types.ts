@@ -19,7 +19,9 @@ export interface SeedLead {
   company_data?: unknown;
 }
 
-export type ArtifactKind = "pdf" | "html";
+// "report.md" and "research.md" are the inspect exports (scripts/inspect.ts):
+// the per-lead readable report and the full step-07 research text.
+export type ArtifactKind = "pdf" | "html" | "report.md" | "research.md";
 
 export interface StateBackend extends Persistence {
   /** Fetch one lead by id, or null if it does not exist. */

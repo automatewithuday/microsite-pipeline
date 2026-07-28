@@ -92,11 +92,13 @@ Want to see the shape before running anything? [`templates/microsite/index.html`
 
 ## The switch
 
-Results always live locally (a SQLite file + `./output` — zero accounts). The one switch is how the AI steps run (default shown):
+Results always live locally (a SQLite file + `./output` — zero accounts). The switches (defaults shown):
 
 | Switch | Default | Options | What it means |
 |--------|---------|---------|---------------|
 | `LLM_PROVIDER` | `api` | `api` \| `claude_cli` | `api` = the Anthropic API with your `ANTHROPIC_API_KEY`. `claude_cli` = a local `claude` binary on a Claude subscription. |
+| `RESEARCH_PROVIDER` | `claude` | `claude` \| `parallel` \| `perplexity` | Which backend writes the step-07 research brief. The default reuses your LLM with web search — no extra key. |
+| `ADS_TRAFFIC_PROVIDER` | `auto` | `auto` \| `apify` \| `deepline` | Which provider runs traffic + ad counts (steps 04/05). See [the route table below](#choosing-the-trafficads-route-apify-or-deepline). |
 
 With the default (`api`) the only required key is `ANTHROPIC_API_KEY`.
 
@@ -127,13 +129,25 @@ Every provider key is optional. A step whose key is absent **skips cleanly**, an
 | Key | Unlocks |
 |-----|---------|
 | **`ANTHROPIC_API_KEY`** (required) | Research brief + TAM, ICP segments, and sales signals — the core of the deck |
-| `DEEPLINE_API_KEY` | Person + company enrichment, founders, SDR headcount (steps 01/02/06) |
-| `APIFY_TOKEN` + `APIFY_ACTOR_*` | Website traffic and Meta/Google/LinkedIn ad counts (steps 04/05) |
+| `DEEPLINE_API_KEY` | Person + company enrichment, founders, SDR headcount (steps 01/02/06) — **and** traffic + Meta/Google/LinkedIn ad counts (steps 04/05) via its native DataForSEO and Adyntel tools |
+| `APIFY_TOKEN` + `APIFY_ACTOR_*` | Website traffic and Meta/Google/LinkedIn ad counts (steps 04/05) via Apify actors |
 | `FIRECRAWL_API_KEY` | Stronger CRM detection, brand colors, and logo scraping (a plain fetch is used without it) |
-| `BRANDFETCH_API_KEY` | Cleaner logo lookup (step 09) |
+| `BRANDFETCH_API_KEY` | Cleaner logo lookup (step 09) — both theme variants are stored, and the renderer picks the one that suits the deck's brand background |
 | `PARALLEL_API_KEY` / `PERPLEXITY_API_KEY` | Alternative research backends (set `RESEARCH_PROVIDER` accordingly) |
 
 Without `DEEPLINE_API_KEY`, pass a `--company <domain>` and the pipeline seeds the company directly so the research and rendering steps still run — an **Anthropic-only** run.
+
+### Choosing the traffic/ads route: Apify or Deepline
+
+Steps 04/05 (traffic + ad counts) can run through **either** provider — pick with `ADS_TRAFFIC_PROVIDER` in `.env`:
+
+| Value | Behavior |
+|-------|----------|
+| `auto` (default) | Apify when its token/actors are configured; Deepline's native tools (DataForSEO traffic, Adyntel ad libraries) as the fallback when Apify is unconfigured or errors (e.g. a monthly usage limit) |
+| `apify` | Apify only — Deepline is never called for these steps |
+| `deepline` | Deepline only — no Apify account or actor picks needed; one `DEEPLINE_API_KEY` covers traffic and all three ad channels |
+
+Note the traffic semantics differ per route: Apify's SimilarWeb actor reports **total site visits**, while Deepline's DataForSEO tool reports **estimated monthly Google-search visits** (organic + paid). The stored `source_field` records which one a lead's number came from.
 
 ---
 
@@ -159,6 +173,11 @@ npx tsx scripts/doctor.ts
 
 # View rendered decks locally
 npx tsx scripts/serve.ts
+
+# Inspect everything the pipeline produced for a lead (Clay-table equivalent):
+# writes output/<id>.report.md + output/<id>.research.md and prints the report
+npx tsx scripts/inspect.ts            # no args: list leads
+npx tsx scripts/inspect.ts <uuid>
 
 # Tests (pure functions stay 100% covered)
 npm test

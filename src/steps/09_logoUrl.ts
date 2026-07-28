@@ -10,7 +10,13 @@
 
 import { BRANDFETCH_API_KEY, type LeadRow } from "../db.js";
 import { type StepModule, type StepResult } from "../pipeline.js";
-import { extractAnyLogoImg, extractHeaderLogoImg, extractOgImage, selectBrandfetchLogo } from "../pure/logoExtract.js";
+import {
+  extractAnyLogoImg,
+  extractHeaderLogoImg,
+  extractOgImage,
+  selectBrandfetchLogo,
+  selectBrandfetchLogoByTheme,
+} from "../pure/logoExtract.js";
 import { toHttpUrl } from "../pure/normalize.js";
 import { fetchBrandfetchLogos } from "../providers/brandfetch.js";
 import { firecrawlScrapeRawHtml, FIRECRAWL_PAGE_COST_USD } from "../providers/firecrawl.js";
@@ -62,11 +68,17 @@ async function run(lead: LeadRow): Promise<StepResult> {
     const brandfetchResult = await fetchBrandfetchLogos(domain, FETCH_TIMEOUT_MS);
     const selected = brandfetchResult ? selectBrandfetchLogo(brandfetchResult.logos) : null;
     if (selected && brandfetchResult) {
-      const data: LogoData = {
+      // Both theme variants stored so the renderer can pick the one that
+      // suits the actual page background (Brandfetch theme "dark" =
+      // dark-colored for light backgrounds, "light" = the inverse).
+      const byTheme = selectBrandfetchLogoByTheme(brandfetchResult.logos);
+      const data: LogoData & { url_dark_theme: string | null; url_light_theme: string | null } = {
         url: selected.url,
         format: selected.format,
         variant: selected.variant,
         source_page: "brandfetch",
+        url_dark_theme: byTheme.dark?.url ?? null,
+        url_light_theme: byTheme.light?.url ?? null,
       };
       // Brandfetch pricing was not established during this build (no key
       // configured to test against); recording 0 rather than fabricating a
@@ -101,18 +113,22 @@ async function run(lead: LeadRow): Promise<StepResult> {
   const secondaryPageHtml: Record<string, string> = {};
 
   if (html !== null) {
+    // Candidate order matters: the header <img> is usually the actual nav
+    // logo, while og:image is usually a social-share banner that renders
+    // illegibly at logo size (live-observed on coldiq.com, 2026-07-28).
+    // og:image stays as the fallback when the header has no image.
     const ogImage = extractOgImage(html);
     if (ogImage) candidates.push({ source: "og:image", url: ogImage });
-    if (!logoUrl && ogImage) {
-      logoUrl = ogImage;
-      sourcePage = "og:image";
-    }
 
     const headerImg = extractHeaderLogoImg(html);
     if (headerImg) candidates.push({ source: "header_img", url: headerImg });
-    if (!logoUrl && headerImg) {
+
+    if (headerImg) {
       logoUrl = headerImg;
       sourcePage = "header_img";
+    } else if (ogImage) {
+      logoUrl = ogImage;
+      sourcePage = "og:image";
     }
   }
 
