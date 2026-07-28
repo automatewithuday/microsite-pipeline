@@ -6,7 +6,6 @@ import {
   renderGate,
   extractMicrositeData,
   escapeHtml,
-  pickReadableBrandBg,
   pickReadableAccent,
   removeSlot,
   buildMicrositeHtml,
@@ -192,27 +191,6 @@ describe("escapeHtml", () => {
   });
 });
 
-describe("pickReadableBrandBg", () => {
-  it("prefers primary when it passes 4.5:1 vs #111", () => {
-    expect(pickReadableBrandBg("#F5EFE6", "#FF4D00")).toBe("#F5EFE6");
-  });
-  it("falls back to secondary when primary fails", () => {
-    expect(pickReadableBrandBg("#111111", "#F5EFE6")).toBe("#F5EFE6");
-  });
-  it("returns null when both fail", () => {
-    expect(pickReadableBrandBg("#000000", "#222222")).toBeNull();
-  });
-  it("returns null for unparseable colors", () => {
-    expect(pickReadableBrandBg("not-a-color", "")).toBeNull();
-  });
-  it("accepts 3-digit hex", () => {
-    expect(pickReadableBrandBg("#fff", "#000")).toBe("#fff");
-  });
-  it("falls back to secondary when primary is unparseable", () => {
-    expect(pickReadableBrandBg("rgb(0,0,0)", "#ffffff")).toBe("#ffffff");
-  });
-});
-
 describe("removeSlot", () => {
   it("removes the whole tagged element including nested children", () => {
     const html = `<div data-slot="x"><span>a</span><span>b</span></div><p>keep</p>`;
@@ -352,22 +330,42 @@ describe("buildMicrositeHtml", () => {
     expect(out).toContain("PLUGS INTO your CRM");
   });
 
-  it("injects brand primary on :root when it passes contrast", () => {
-    const out = buildMicrositeHtml(lead(), FAKE_TEMPLATE);
-    // #F5EFE6 IS the cream default, so no override is injected (would be a no-op).
-    expect(out).not.toContain("--brand-primary: #F5EFE6");
+  it("injects --brand-accent when a brand color is dark enough to read on white", () => {
+    // #0B4F6C contrasts ~8.9:1 vs white (well above the 4.5 AA floor).
+    const out = buildMicrositeHtml(
+      lead({ brand_colors: { primary: "#0B4F6C", secondary: "" } }),
+      FAKE_TEMPLATE
+    );
+    expect(out).toContain(":root{--brand-accent: #0B4F6C;}");
+    expect(out.indexOf("--brand-accent: #0B4F6C")).toBeGreaterThan(out.indexOf("<body>"));
   });
 
-  it("injects a non-cream readable primary override", () => {
-    const out = buildMicrositeHtml(lead({ brand_colors: { primary: "#FFFFFF", secondary: "#000000" } }), FAKE_TEMPLATE);
-    expect(out).toContain("--brand-primary: #FFFFFF");
-    expect(out).toContain("--brand-secondary: #FFFFFF");
+  it("keeps the default accent when both brand colors are too light (pink Signaliz case)", () => {
+    const out = buildMicrositeHtml(
+      lead({ brand_colors: { primary: "#F8C8DC", secondary: "#FFF0F5" } }),
+      FAKE_TEMPLATE
+    );
+    expect(out).not.toContain("--brand-accent:");
   });
 
-  it("injects nothing when both brand colors fail contrast", () => {
-    const out = buildMicrositeHtml(lead({ brand_colors: { primary: "#000000", secondary: "#111111" } }), FAKE_TEMPLATE);
-    expect(out).not.toContain("--brand-primary: #000000");
-    expect(out).not.toContain("--brand-primary: #111111");
+  it("never injects full-page brand background vars (regression: pink Signaliz cover)", () => {
+    const out = buildMicrositeHtml(
+      lead({ brand_colors: { primary: "#F8C8DC", secondary: "#0B7BFA" } }),
+      FAKE_TEMPLATE
+    );
+    expect(out).not.toContain("--brand-primary: #");
+    expect(out).not.toContain("--brand-secondary: #");
+  });
+
+  it("always uses the dark-theme logo variant (white pages)", () => {
+    const out = buildMicrositeHtml(
+      lead({
+        logo: { url: "https://l/base.png", url_dark_theme: "https://l/dark.png", url_light_theme: "https://l/light.png" },
+        brand_colors: { primary: "#0F1115", secondary: "" }, // dark brand color must NOT flip the logo
+      }),
+      FAKE_TEMPLATE
+    );
+    expect(out).toContain("https://l/dark.png");
   });
 
   it("never rewrites page-7 case metrics: proof-library values render verbatim", () => {
@@ -509,9 +507,11 @@ describe("buildMicrositeHtml against the real committed template", () => {
     expect(sectionOf(out, "Plan")).toContain("Full review. One document.");
   });
 
-  it("injects a non-cream readable brand override into :root", () => {
+  it("injects a readable brand-accent override into :root", () => {
+    // realLead: primary #FFFFFF fails vs white, secondary #123456 passes.
     const out = buildMicrositeHtml(realLead(), realTemplate);
-    expect(out).toContain("--brand-primary: #FFFFFF");
+    expect(out).toContain("--brand-accent: #123456");
+    expect(out).not.toContain("--brand-primary:");
   });
 
   it("removes point1 block from the real template when paidSearchPct is null", () => {
@@ -524,16 +524,15 @@ describe("buildMicrositeHtml against the real committed template", () => {
 });
 
 describe("buildMicrositeHtml brand-color injection", () => {
-  // The real template keeps its <style> (with the cream defaults for
-  // --brand-primary/--brand-secondary) inside the BODY, not the head. At
-  // equal :root specificity the later rule wins, so the injected override
-  // must land after the template's own definition or the cream default
-  // silently wins (live-observed on the coldiq.com deck, 2026-07-28).
-  const BODY_STYLE_TEMPLATE = `<!doctype html><html><head></head><body>
-<helmet><style>
-:root{--cream:#F5EFE6;--brand-primary:var(--cream);--brand-secondary:var(--cream);}
-</style></helmet>
-<section data-label="Cover" style="background:var(--brand-primary)"><h1>[Company]</h1></section>
+  // The template defines its own --brand-accent default at :root (in the
+  // head). At equal :root specificity the later rule wins, so the injected
+  // override must land after the template's own definition -- appended at
+  // the very end of the document, right before </body> -- or the template
+  // default silently wins (live-observed on the coldiq.com deck, 2026-07-28).
+  const HEAD_STYLE_TEMPLATE = `<!doctype html><html><head><style>
+:root{--brand-accent:#FF5A2C;}
+</style></head><body>
+<section data-label="Cover"><h1 style="color:var(--brand-accent)">[Company]</h1></section>
 </body></html>`;
 
   function brandLead() {
@@ -543,16 +542,17 @@ describe("buildMicrositeHtml brand-color injection", () => {
       icp_segments: { segments: [] },
       sales_signals: { signals: [] },
       logo: { url: "" },
-      brand_colors: { primary: "#0B7BFA", secondary: "#F9962E" },
+      // #0B4F6C contrasts ~8.9:1 vs white (well above the 4.5 AA floor).
+      brand_colors: { primary: "#0B4F6C", secondary: "#F9962E" },
       company_data: { merged: { name: "ColdIQ" } },
       derived: {},
     } as unknown as LeadRow;
   }
 
-  it("injects the brand override AFTER the template's own :root definition", () => {
-    const out = buildMicrositeHtml(brandLead(), BODY_STYLE_TEMPLATE);
-    const overrideAt = out.lastIndexOf("--brand-primary: #0B7BFA");
-    const templateDefaultAt = out.indexOf("--brand-primary:var(--cream)");
+  it("injects the brand-accent override AFTER the template's own :root definition", () => {
+    const out = buildMicrositeHtml(brandLead(), HEAD_STYLE_TEMPLATE);
+    const overrideAt = out.lastIndexOf("--brand-accent: #0B4F6C");
+    const templateDefaultAt = out.indexOf("--brand-accent:#FF5A2C");
     expect(overrideAt).toBeGreaterThan(-1);
     expect(templateDefaultAt).toBeGreaterThan(-1);
     expect(overrideAt).toBeGreaterThan(templateDefaultAt);
@@ -594,7 +594,7 @@ describe("pickThemedLogoUrl", () => {
 });
 
 describe("buildMicrositeHtml themed logo integration", () => {
-  it("uses the light-theme logo url when the injected brand bg is dark", () => {
+  it("always uses the dark-theme logo url, even when the brand color is dark (deck pages are always white)", () => {
     const template = `<!doctype html><html><head></head><body>
 <section data-label="Cover"><div data-slot="logo"><img src="[LOGO_URL]"></div><h1>[Company]</h1></section>
 </body></html>`;
@@ -614,8 +614,8 @@ describe("buildMicrositeHtml themed logo integration", () => {
     } as unknown as LeadRow;
 
     const out = buildMicrositeHtml(lead, template);
-    expect(out).toContain('src="https://cdn.bf/light-logo.svg"');
-    expect(out).not.toContain('src="https://cdn.bf/dark-logo.svg"');
+    expect(out).toContain('src="https://cdn.bf/dark-logo.svg"');
+    expect(out).not.toContain('src="https://cdn.bf/light-logo.svg"');
   });
 });
 

@@ -1,7 +1,18 @@
 // Self-hosted renderer: pure template builder. Interpolation,
-// HTML escaping, WCAG contrast math, brand-color selection, and optional
-// [Point 1]/[Point 2] block removal against the committed Claude Design
-// template. No I/O. 100% unit-covered.
+// HTML escaping, WCAG contrast math, and optional [Point 1]/[Point 2] block
+// removal against the committed Claude Design template. No I/O. 100%
+// unit-covered.
+//
+// Brand color is accent-only: the deck's pages are always white/paper.
+// pickReadableAccent() may tint small accent details (--brand-accent) with
+// the prospect's brand color, and only when it reads on white (AA >= 4.5);
+// otherwise the template's own default accent stays. There is no code path
+// that turns a brand color into a full-page background (--brand-primary/
+// --brand-secondary are never written) -- a light brand color (e.g. pale
+// pink) can no longer wash out an entire page (the "pink Signaliz" failure).
+// The logo is always resolved for a white background (pickThemedLogoUrl with
+// bgHex=null), independent of brand color, since the page background never
+// changes.
 import type { LeadRow } from "../db.js";
 import type { ProofLibrary } from "./proofLibrary.js";
 
@@ -202,27 +213,9 @@ function relativeLuminance([r, g, b]: [number, number, number]): number {
   return 0.2126 * lin(r) + 0.7152 * lin(g) + 0.0722 * lin(b);
 }
 
-// Contrast ratio of a color vs the deck's #111111 body text.
-const TEXT_LUM = relativeLuminance([0x11, 0x11, 0x11]);
-function contrastVsText(hex: string): number | null {
-  const rgb = parseHex(hex);
-  if (!rgb) return null;
-  const l = relativeLuminance(rgb);
-  const [hi, lo] = l > TEXT_LUM ? [l, TEXT_LUM] : [TEXT_LUM, l];
-  return (hi + 0.05) / (lo + 0.05);
-}
-
-export function pickReadableBrandBg(primary: string, secondary: string): string | null {
-  const pc = contrastVsText(primary);
-  if (pc !== null && pc >= 4.5) return primary;
-  const sc = contrastVsText(secondary);
-  if (sc !== null && sc >= 4.5) return secondary;
-  return null;
-}
-
-// Accent selection for pages with a LIGHT background: the inverse of
-// pickReadableBrandBg. Returns the first brand color dark enough to be read
-// ON white (contrast >= 4.5 vs #FFFFFF), or null (caller keeps the ink default).
+// Accent selection for the deck's LIGHT pages. Returns the first brand color
+// dark enough to be read ON white (contrast >= 4.5 vs #FFFFFF), or null
+// (caller keeps the template's default accent).
 const WHITE_LUM = 1.0;
 function contrastVsWhite(hex: string): number | null {
   const rgb = parseHex(hex);
@@ -336,8 +329,6 @@ export function removeSlot(html: string, slot: string): string {
 // brand injection. Returns a single self-contained HTML string.
 // ---------------------------------------------------------------------
 
-const CREAM_DEFAULT = "#F5EFE6";
-
 export function buildMicrositeHtml(
   lead: LeadRow,
   templateHtml: string,
@@ -346,11 +337,9 @@ export function buildMicrositeHtml(
   const d = extractMicrositeData(lead);
   let html = templateHtml;
 
-  // The brand bg is computed up front: the logo variant depends on the
-  // background it will sit on (the style injection itself happens last).
-  const bg = pickReadableBrandBg(d.brandPrimary, d.brandSecondary);
-  const effectiveBg = bg && bg.toUpperCase() !== CREAM_DEFAULT ? bg : null;
-  const logoUrl = pickThemedLogoUrl(isRecord(lead.logo) ? lead.logo : {}, effectiveBg);
+  // The deck's pages are always white/paper, so the logo is always resolved
+  // for a light background regardless of the prospect's brand color.
+  const logoUrl = pickThemedLogoUrl(isRecord(lead.logo) ? lead.logo : {}, null);
 
   // 1. Optional-block removal FIRST (before token replacement), so a removed
   //    block never leaves a dangling escaped value. An absent logo drops the
@@ -435,16 +424,13 @@ export function buildMicrositeHtml(
     html = html.split(token).join(value);
   }
 
-  // 3. Brand-color injection on pages 1/3/5 only, if a color passes contrast.
-  //    Pages here use <section data-label="Cover|ICP|Signals">, which already
-  //    reference var(--brand-primary)/var(--brand-secondary); overriding the
-  //    :root vars recolors exactly those three pages (2/4/6/7/8 never use them
-  //    as a full-page background, so the default cream stays).
-  //    The template's own <style> (cream defaults for the brand vars) lives in
-  //    the BODY, and at equal :root specificity the later rule wins -- so the
-  //    override must be appended at the end of the document, never the head.
-  if (effectiveBg) {
-    const style = `<style>:root{--brand-primary: ${effectiveBg};--brand-secondary: ${effectiveBg};}</style>`;
+  // 3. Brand accent injection. The deck's pages are always white/paper; the
+  //    prospect's brand color may only tint small accents (--brand-accent),
+  //    and only when it reads on white (AA >= 4.5). Appended at the end of
+  //    the document so it wins the template's :root default.
+  const accent = pickReadableAccent(d.brandPrimary, d.brandSecondary);
+  if (accent) {
+    const style = `<style>:root{--brand-accent: ${accent};}</style>`;
     html = /<\/body>/i.test(html) ? html.replace(/<\/body>/i, `${style}</body>`) : html + style;
   }
 
