@@ -6,6 +6,7 @@
 
 import { DEEPLINE_API_KEY, assertRequiredEnv, type LeadRow } from "../src/db.js";
 import { applyDerived } from "../src/derivedRoutine.js";
+import { applyFollowupRender } from "../src/followupRender.js";
 import { normalizeDomain, toHttpUrl } from "../src/pure/normalize.js";
 import { applyRender } from "../src/render.js";
 import {
@@ -20,7 +21,7 @@ import { STEPS } from "../src/steps/index.js";
 
 const state = getStateBackend();
 
-const POST_PASS_STEP_NAMES = ["derived", "render"];
+const POST_PASS_STEP_NAMES = ["derived", "render", "followup_render"];
 const VALID_STEP_NAMES = [...STEPS.map((s) => s.name), ...POST_PASS_STEP_NAMES];
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const DOMAIN_LIKE = /^[a-z0-9-]+(\.[a-z0-9-]+)+$/i;
@@ -131,6 +132,9 @@ async function processLead(id: string, forceStep?: string): Promise<void> {
 
   await applyDerived(await fetchLeadById(id), state);
   await applyRender(await fetchLeadById(id), state, { force: forceStep === "render" });
+  await applyFollowupRender(await fetchLeadById(id), state, {
+    force: forceStep === "followup_render" || forceStep === "followup_narrative",
+  });
 
   const done = await fetchLeadById(id);
   const render = done.render as { pageUrl?: string; pdfUrl?: string } | null | undefined;
@@ -142,6 +146,14 @@ async function processLead(id: string, forceStep?: string): Promise<void> {
   } else {
     const reason = done.step_status?.render?.error ?? "see step_status";
     console.log(`\nNo microsite rendered: ${reason}`);
+  }
+
+  const followup = done.followup as { pageUrl?: string; skimUrl?: string } | null | undefined;
+  if (followup?.pageUrl) {
+    console.log("\nFollow-up draft (NOT deployed - review required):");
+    console.log(`  page: ${followup.pageUrl}`);
+    console.log(`  skim: ${followup.skimUrl}`);
+    console.log("  (review + deploy: `npx tsx scripts/followup.ts list`)");
   }
 }
 
@@ -196,6 +208,7 @@ async function main(): Promise<void> {
     for (const lead of leads) {
       await applyDerived(await fetchLeadById(String(lead.id)), state);
       await applyRender(await fetchLeadById(String(lead.id)), state, {});
+      await applyFollowupRender(await fetchLeadById(String(lead.id)), state, {});
     }
     return;
   }
