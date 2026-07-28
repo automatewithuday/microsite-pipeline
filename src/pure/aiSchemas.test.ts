@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import {
+  followupNarrativeSchema,
   icpSegmentsJsonSchema,
   icpSegmentsSchema,
   salesSignalsJsonSchema,
@@ -168,5 +169,57 @@ describe("tool-use JSON schemas (Anthropic API path)", () => {
   it("tamJsonSchema and icpSegmentsJsonSchema are draft 2020-12 compatible", () => {
     assertNoTupleItems(tamJsonSchema, "tam");
     assertNoTupleItems(icpSegmentsJsonSchema, "icpSegments");
+  });
+});
+
+const validNarrative = {
+  diagnosis: [
+    { title: "No outbound motion", body: "Traffic shows paid reliance.", groundedIn: "traffic: 62% paid search" },
+    { title: "Founder-dependent content", body: "Posting is ad hoc.", groundedIn: "research: LinkedIn cadence" },
+  ],
+  businessReading: ["Agency plus product arm, both under one roof."],
+  fit: "Operator layer under the team: outbound engine plus automation.",
+  playbook: [
+    { title: "Stand up signal-based outbound", body: "Scrape hiring and funding signals weekly." },
+    { title: "Founder LinkedIn engine", body: "Two posts a week on a locked format." },
+    { title: "Gated asset capture", body: "One PDF lead magnet routed to nurture." },
+  ],
+  caseStudyPicks: [
+    { id: "dailypay", relevance: "Same enterprise outbound motion." },
+    { id: "sk-trading", relevance: "Same founder-led community shape." },
+  ],
+  playPicks: [{ id: "signal-outbound", relevance: "They have zero outbound today." }],
+};
+
+describe("followupNarrativeSchema", () => {
+  it("accepts a valid narrative", () => {
+    expect(() => followupNarrativeSchema.parse(validNarrative)).not.toThrow();
+  });
+
+  it("rejects fewer than 2 diagnosis items", () => {
+    const bad = { ...validNarrative, diagnosis: [validNarrative.diagnosis[0]] };
+    expect(() => followupNarrativeSchema.parse(bad)).toThrow();
+  });
+
+  it("rejects more than 3 case study picks", () => {
+    const pick = validNarrative.caseStudyPicks[0]!;
+    const bad = { ...validNarrative, caseStudyPicks: [pick, pick, pick, pick] };
+    expect(() => followupNarrativeSchema.parse(bad)).toThrow();
+  });
+
+  it("rejects a diagnosis item without groundedIn", () => {
+    const bad = {
+      ...validNarrative,
+      diagnosis: [
+        { title: "t", body: "b" },
+        { title: "t2", body: "b2", groundedIn: "g" },
+      ],
+    };
+    expect(() => followupNarrativeSchema.parse(bad)).toThrow();
+  });
+
+  it("rejects fewer than 3 playbook steps", () => {
+    const bad = { ...validNarrative, playbook: validNarrative.playbook.slice(0, 2) };
+    expect(() => followupNarrativeSchema.parse(bad)).toThrow();
   });
 });

@@ -80,4 +80,37 @@ export const salesSignalsJsonSchema = toToolSchema(
   z.object({ signals: z.array(z.string().min(1)).min(3).max(3) })
 );
 
+// Step 13 (followup_narrative). The personalized copy for the follow-up deck.
+// groundedIn is required on every diagnosis item: it names the data point the
+// claim rests on and is shown only in the skim file, never on the page.
+export const followupNarrativeSchema = z.object({
+  diagnosis: z
+    .array(
+      z.object({
+        title: z.string().min(1),
+        body: z.string().min(1),
+        groundedIn: z.string().min(1),
+      })
+    )
+    .min(2)
+    .max(3),
+  businessReading: z.array(z.string().min(1)).min(1).max(3),
+  fit: z.string().min(1),
+  playbook: z
+    .array(z.object({ title: z.string().min(1), body: z.string().min(1) }))
+    .min(3)
+    .max(5),
+  caseStudyPicks: z
+    .array(z.object({ id: z.string().min(1), relevance: z.string().min(1) }))
+    .min(2)
+    .max(3),
+  playPicks: z
+    .array(z.object({ id: z.string().min(1), relevance: z.string().min(1) }))
+    .min(1)
+    .max(2),
+});
+export type FollowupNarrative = z.infer<typeof followupNarrativeSchema>;
+
+export const followupNarrativeJsonSchema = toToolSchema(followupNarrativeSchema);
+
 export { wordCount };
