@@ -3,6 +3,7 @@
 // [Point 1]/[Point 2] block removal against the committed Claude Design
 // template. No I/O. 100% unit-covered.
 import type { LeadRow } from "../db.js";
+import type { ProofLibrary } from "./proofLibrary.js";
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null;
@@ -263,6 +264,28 @@ export function pickThemedLogoUrl(logo: Record<string, unknown>, bgHex: string |
   const bgIsDark = rgb !== null && relativeLuminance(rgb) < DARK_BG_LUMINANCE;
   const preferred = bgIsDark ? lightTheme : darkTheme;
   return preferred ?? darkTheme ?? lightTheme ?? base;
+}
+
+// ---------------------------------------------------------------------
+// Deck case-study pick. Deterministic, no AI: case studies whose
+// verticalTags match the lead's industry come first (curated order
+// preserved within each group), the rest fill from curated order.
+// ---------------------------------------------------------------------
+
+export function pickDeckCaseStudies(
+  lib: ProofLibrary,
+  industry: string | null
+): ProofLibrary["caseStudies"] {
+  const ind = (industry ?? "").trim().toLowerCase();
+  const matches = (c: ProofLibrary["caseStudies"][number]): boolean =>
+    ind !== "" &&
+    c.verticalTags.some((t) => {
+      const tag = t.trim().toLowerCase();
+      return tag !== "" && (tag.includes(ind) || ind.includes(tag));
+    });
+  const matched = lib.caseStudies.filter(matches);
+  const rest = lib.caseStudies.filter((c) => !matches(c));
+  return [...matched, ...rest].slice(0, 2);
 }
 
 // ---------------------------------------------------------------------

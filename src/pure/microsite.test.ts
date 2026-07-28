@@ -11,8 +11,10 @@ import {
   removeSlot,
   buildMicrositeHtml,
   pickThemedLogoUrl,
+  pickDeckCaseStudies,
 } from "./microsite.js";
 import type { LeadRow } from "../db.js";
+import type { ProofLibrary } from "./proofLibrary.js";
 
 function baseLead(overrides: Partial<LeadRow> = {}): LeadRow {
   return {
@@ -520,5 +522,61 @@ describe("pickReadableAccent", () => {
   });
   it("returns null when neither is dark enough (or unparseable)", () => {
     expect(pickReadableAccent("#ffffff", "not-a-color")).toBeNull();
+  });
+});
+
+// Fixture helper for pickDeckCaseStudies tests
+function lib(cases: Array<Partial<ProofLibrary["caseStudies"][number]> & { id: string }>): ProofLibrary {
+  return {
+    profile: { positioning: "p", locationLine: "l", calUrl: "https://example.com", repoLinks: [] },
+    caseStudies: cases.map((c) => ({
+      client: c.id, verticalTags: ["saas"], motionTags: ["outbound"],
+      problem: "prob", approach: "appr", metrics: [{ value: "1x", label: "l" }],
+      ...c,
+    })),
+    plays: [{ id: "pl", name: "n", whenTags: ["w"], steps: ["s"] }],
+    platforms: [],
+    plan30day: [{ title: "Audit", deliverables: ["d"] }],
+  } as ProofLibrary;
+}
+
+describe("pickDeckCaseStudies", () => {
+  it("returns the first two in curated order when industry is null", () => {
+    const out = pickDeckCaseStudies(lib([{ id: "a" }, { id: "b" }, { id: "c" }]), null);
+    expect(out.map((c) => c.id)).toEqual(["a", "b"]);
+  });
+
+  it("puts industry-matched case studies first, curated order preserved", () => {
+    const out = pickDeckCaseStudies(
+      lib([{ id: "a" }, { id: "b", verticalTags: ["fintech"] }, { id: "c", verticalTags: ["fintech"] }]),
+      "Fintech"
+    );
+    expect(out.map((c) => c.id)).toEqual(["b", "c"]);
+  });
+
+  it("matches case-insensitively and by substring in either direction", () => {
+    const out = pickDeckCaseStudies(
+      lib([{ id: "a" }, { id: "b", verticalTags: ["Financial Services"] }]),
+      "financial"
+    );
+    expect(out.map((c) => c.id)).toEqual(["b", "a"]);
+  });
+
+  it("fills from curated order when only one matches", () => {
+    const out = pickDeckCaseStudies(
+      lib([{ id: "a" }, { id: "b" }, { id: "c", verticalTags: ["fintech"] }]),
+      "fintech"
+    );
+    expect(out.map((c) => c.id)).toEqual(["c", "a"]);
+  });
+
+  it("returns a single case study when the library has only one", () => {
+    const out = pickDeckCaseStudies(lib([{ id: "a" }]), "fintech");
+    expect(out.map((c) => c.id)).toEqual(["a"]);
+  });
+
+  it("ignores empty/whitespace industry", () => {
+    const out = pickDeckCaseStudies(lib([{ id: "a" }, { id: "b", verticalTags: ["  "] }]), "  ");
+    expect(out.map((c) => c.id)).toEqual(["a", "b"]);
   });
 });
