@@ -12,10 +12,10 @@ jobs:
     # No secrets needed: tests are pure/mocked (vitest.config.ts pins the
     # keyless switch combination) and make no real network calls.
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
 
       - name: Setup Node
-        uses: actions/setup-node@v4
+        uses: actions/setup-node@v5
         with:
           node-version: 22
           cache: npm
