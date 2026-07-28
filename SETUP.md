@@ -196,6 +196,43 @@ To add one, either re-run `npm run setup` (it offers to overwrite `.env`, defaul
 
 ---
 
+## Follow-up decks (optional)
+
+Alongside the microsite, every processed lead gets a **follow-up deck draft**:
+one link-worthy scrolling page that opens with a diagnosis of the prospect's
+business (grounded in the pipeline's research, traffic, ads, and signals) and
+closes with your proof — case studies, plays, platforms, a 30-day plan, and a
+booking CTA.
+
+Three things to know before your first send:
+
+1. **`content/proof-library.yaml` is yours.** It is the single source of truth
+   for your case studies, plays, platforms, and 30-day plan. Metrics render
+   verbatim on the page — the LLM only selects and frames entries, never
+   rewrites a number. The seeded file contains `# VERIFY:` markers where a
+   metric could not be extracted reliably; resolve those before sending
+   anything real.
+2. **Nothing auto-publishes.** Drafts land in `output/<id>.followup.html` with
+   a ~30-line skim file (`.followup.md`) listing every claim and the data
+   point it rests on. A page only goes live through `approve`.
+3. **Deploys need `NETLIFY_AUTH_TOKEN`.** Create one at app.netlify.com →
+   User settings → Applications → New access token, and put it in `.env`.
+   Each approved page becomes its own prospect-named site
+   (e.g. `acme-growth-plan.netlify.app`); re-approving redeploys to the same
+   URL.
+
+The queue commands:
+
+```bash
+npx tsx scripts/followup.ts list                  # drafts / deployed / failed
+npx tsx scripts/followup.ts preview <uuid>        # print the skim + page path
+npx tsx scripts/followup.ts notes <uuid> "..."    # add call notes (post-call mode)
+npx tsx scripts/followup.ts regenerate <uuid> [--steer "..."]
+npx tsx scripts/followup.ts approve <uuid> [--dry-run]
+```
+
+---
+
 ## Troubleshooting
 
 | Symptom | Cause | Fix |

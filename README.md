@@ -192,6 +192,32 @@ npm test
 
 `--company` is the company **domain** (e.g. `smartlead.ai`). Secrets live only in `.env` (gitignored) — never commit or paste key values.
 
+### Follow-up decks (skim queue + deploy)
+
+Every processed lead also gets a **follow-up deck draft**: a single scrolling
+pitch page (diagnosis of their business → your playbook for them → your case
+studies → one call CTA), personalized from the pipeline's research and framed
+around the proof content in `content/proof-library.yaml` (yours to edit —
+metrics render verbatim, the LLM only selects and frames). Drafts stay local;
+a page only goes live through an explicit `approve`, which deploys it to a
+prospect-named Netlify subdomain (needs `NETLIFY_AUTH_TOKEN` in `.env`).
+
+```bash
+# Review queue: drafts awaiting review, deployed, failed
+npx tsx scripts/followup.ts list
+
+# Read the ~30-line skim (every claim + the data point it rests on)
+npx tsx scripts/followup.ts preview <uuid>
+
+# Fold in call notes (post-call mode), then regenerate
+npx tsx scripts/followup.ts notes <uuid> "They said churn is the burning issue"
+npx tsx scripts/followup.ts regenerate <uuid> --steer "lean into retention"
+
+# Publish (prospect-named subdomain, e.g. acme-growth-plan.netlify.app)
+npx tsx scripts/followup.ts approve <uuid> --dry-run
+npx tsx scripts/followup.ts approve <uuid>
+```
+
 ---
 
 ## Troubleshooting
