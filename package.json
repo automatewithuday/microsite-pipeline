@@ -1,6 +1,7 @@
 {
   "name": "microsite-pipeline",
   "version": "0.1.0",
+  "description": "Turn one sales lead into a personalized 8-page sales microsite (PDF + HTML). Bring-your-own-key, runs locally, no fabricated data.",
   "private": true,
   "license": "MIT",
   "type": "module",

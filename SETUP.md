@@ -119,7 +119,7 @@ It asks three questions — verifying your keys against the real APIs as you pas
 |---|----------|---------|-------|
 | 1 | How the AI steps run | `api` | Your `ANTHROPIC_API_KEY`, or a local `claude` CLI on a subscription. |
 | 2 | Research backend | `claude` | Reuses the key from step 1. Parallel/Perplexity optional. |
-| 3 | Optional provider keys | skip all | Press Enter past each. |
+| 3 | Optional provider keys | skip all | Press Enter past each. With a Deepline or Apify key it also asks the traffic/ads route (`ADS_TRAFFIC_PROVIDER`). |
 | 4 | — | — | Writes `.env` (chmod 600), creates `./output` and the database. |
 
 Results always land locally: a SQLite file plus rendered decks in `./output`. No accounts needed.
@@ -161,6 +161,13 @@ npx tsx scripts/serve.ts     # open the printed URL
 ```
 
 Your files are at `./output/{leadId}.html` and `./output/{leadId}.pdf`.
+
+To see everything the pipeline produced for a lead — the full research brief plus every enriched field, as markdown:
+
+```bash
+npx tsx scripts/inspect.ts           # lists leads
+npx tsx scripts/inspect.ts <leadId>  # writes output/<leadId>.report.md + .research.md
+```
 
 ---
 

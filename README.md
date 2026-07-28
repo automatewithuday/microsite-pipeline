@@ -58,6 +58,10 @@ npx tsx scripts/run.ts --lead-url "https://www.linkedin.com/in/some-founder" \
 
 # 5. View it in a browser
 npx tsx scripts/serve.ts        # then open the printed URL
+
+# 6. (optional) Export everything it produced — the full research brief and
+#    every enriched field — for review
+npx tsx scripts/inspect.ts <leadId>
 ```
 
 `npm run setup` is an interactive wizard: it walks through the switches, asks only for the keys you want, **checks each one against the real API as you paste it**, and writes a `.env` that keeps all the explanatory comments. Every optional key can be skipped with Enter.
@@ -77,12 +81,15 @@ An 8-page deck built for one specific company, in two formats: a **PDF** to atta
 | Page | Content |
 |------|---------|
 | 1 | Cover — their logo, their brand colors, their company name |
-| 2 | Research brief on their business |
-| 3 | TAM (total addressable market) with a sourced funnel |
-| 4–5 | ICP segments — who they should be selling to |
-| 6 | Sales signals — concrete openings worth acting on |
-| 7 | Their current GTM footprint (traffic, ads, CRM, SDR headcount) |
+| 2 | Their current GTM snapshot — traffic, founder followers, ad activity, SDR headcount |
+| 3 | ICP segments — who they should be selling to |
+| 4 | TAM (total addressable market) — a three-tier funnel from sourced research |
+| 5 | Sales signals — three concrete openings worth acting on |
+| 6 | Integration — plugs into their detected CRM |
+| 7 | Proof |
 | 8 | The pitch |
+
+The long-form research brief behind pages 3–5 isn't a deck page — export it (plus every other stored field) with `npx tsx scripts/inspect.ts <leadId>`.
 
 Pages fill in from whatever your keys support. **Anything unsourced is dropped, not invented** — a deck with fewer keys is shorter, never fabricated.
 
