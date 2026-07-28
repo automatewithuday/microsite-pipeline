@@ -134,6 +134,10 @@ export const RENDER_STRICT = (optional("RENDER_STRICT") ?? "").toLowerCase() ===
 export const OUTPUT_DIR = optional("OUTPUT_DIR") ?? "output";
 export const LOCAL_DB_PATH = optional("LOCAL_DB_PATH") ?? "local.db";
 
+// Netlify personal access token: required only when deploying follow-up decks
+// (scripts/followup.ts approve). Never printed.
+export const NETLIFY_AUTH_TOKEN = optional("NETLIFY_AUTH_TOKEN") ?? "";
+
 export const BRANDFETCH_API_KEY = optional("BRANDFETCH_API_KEY");
 export const APIFY_ACTOR_SIMILARWEB = optional("APIFY_ACTOR_SIMILARWEB");
 export const APIFY_ACTOR_META_ADS = optional("APIFY_ACTOR_META_ADS");
