@@ -1,0 +1,827 @@
+Company Research TAM - I need you to research this B2B company "{Company}" to
+identify their ICP model, calculate estimated TAM size using public sources,
+and provide actionable intent signals their sales team can track.
+
+CONTEXT
+
+Description: {description}
+
+Company Website: {url}
+
+Company LinkedIn: {linkedin}
+
+Use the company's exact vocabulary and terminology throughout your response.
+Do not use em dashes anywhere in your output. Use periods, commas, or
+restructure the sentence instead.
+
+1. Product & Service Intelligence
+
+Core Offerings:
+
+What they sell (SaaS, API, consulting, marketplace, etc.)
+
+Primary value proposition in their words
+
+Product architecture (multi-tenant, on-prem, hybrid)
+
+Delivery model (self-serve, sales-led, PLG hybrid)
+
+Unique Features & Differentiation:
+
+Standout capabilities vs competitors
+
+Technical moats (proprietary data, ML models, integrations)
+
+Speed/efficiency claims with supporting evidence
+
+Use Cases & Implementation:
+
+Specific workflows/processes they optimize
+
+Job-to-be-done for each persona
+
+Time-to-value claims
+
+Implementation complexity signals
+
+Technology Ecosystem:
+
+Native integrations (CRM, MAP, data platforms, BI tools)
+
+API capabilities and use cases
+
+Technology partnerships and alliances
+
+Stack compatibility requirements
+
+2. Ideal Customer Profile (ICP) - Deep Dive
+
+Industry Segmentation:
+
+Primary verticals with evidence (case studies, testimonials, content)
+
+Specific sub-segments within verticals (e.g., "B2B SaaS" not just "software", "multi-location dental practices" not just "healthcare")
+
+NAICS codes that match their ICP
+
+Secondary/emerging verticals they're exploring
+
+Industries they explicitly exclude or deprioritize
+
+Vertical-specific feature sets or messaging
+
+Company Firmographics:
+
+Employee count ranges with supporting evidence
+
+Revenue bands (if mentioned or calculable from other signals)
+
+Funding stage indicators (bootstrap-friendly, growth-stage, enterprise-ready)
+
+Geographic markets (US-only, global, specific regions)
+
+Public vs private company bias
+
+Business model types (B2B, B2C, marketplace, services)
+
+Organizational Maturity Signals:
+
+Team structure requirements (dedicated ops, sales team size)
+
+Process maturity indicators
+
+Tool stack sophistication level
+
+Data infrastructure prerequisites
+
+Growth stage indicators
+
+Buyer Personas:
+
+Primary economic buyer (role, level, department)
+
+Technical evaluator/champion roles
+
+End users and their priorities
+
+Influencers in the buying process
+
+Approval chain complexity
+
+Pain Points & Triggers:
+
+Specific problems in their language
+
+Before-state descriptions they use
+
+Buying triggers (events that create urgency)
+
+Negative consequences they prevent
+
+ROI promises they make
+
+Positive Fit Indicators:
+
+Required technology stack (must-have tools)
+
+Nice-to-have technologies that indicate sophistication
+
+Process/operational maturity markers
+
+Budget allocation patterns
+
+Compliance/security requirements
+
+Cultural/philosophical alignment signals
+
+Negative Signals (Disqualifiers):
+
+Company attributes that make them poor fits
+
+Technology conflicts
+
+Maturity mismatches (too early or too late)
+
+Industry exclusions
+
+3. Total Addressable Market (TAM) Estimation
+
+Step 1: Identify the Precise Market Segment
+
+Exact industry/vertical definition
+
+Sub-segment specificity (e.g., "cloud-based MSPs serving 20-200 employee SMBs" not just "MSPs")
+
+Geographic scope
+
+Size parameters (employee/revenue ranges)
+
+Step 2: Find Public Market Size Data
+
+Search for and cite data from:
+
+Industry Trade Associations:
+
+Industry-specific associations that publish member counts or market reports
+
+Annual reports with market size data
+
+Trade publications with industry surveys
+
+Examples: CompTIA for MSPs, HIMSS for healthcare IT, etc.
+
+Government & Census Data:
+
+US Census Bureau (County Business Patterns, Economic Census)
+
+Bureau of Labor Statistics (Quarterly Census of Employment and Wages)
+
+SBA Office of Advocacy (small business profiles by industry)
+
+International equivalents (UK ONS, Eurostat, etc.)
+
+NAICS/SIC code specific counts
+
+Market Research Firms (Free Reports):
+
+Gartner press releases with market sizes
+
+Forrester publicly available data
+
+IBISWorld industry summaries
+
+Statista free statistics
+
+Grand View Research/Fortune Business Insights/Mordor Intelligence public data
+
+Precedence Research market overviews
+
+Industry Publications & News:
+
+Trade magazine surveys and reports
+
+Tech news sites with market analysis
+
+Funding databases (Crunchbase public data, CB Insights free reports)
+
+Company S-1 filings that cite market sizes
+
+Academic & Research Institutions:
+
+University research centers
+
+Think tanks
+
+Industry whitepapers
+
+Alternative Data Sources:
+
+BuiltWith technology reports (public stats on technology adoption)
+
+Job posting aggregators showing hiring patterns
+
+Domain registration data for specific industries
+
+Chamber of Commerce data
+
+Professional certification bodies
+
+Step 3: TAM Calculation Methodology
+
+Bottom-Up Calculation:
+
+Start with total companies in the segment from public sources
+
+Apply ICP filters (size, geography, maturity)
+
+Estimate addressable percentage based on fit criteria
+
+Calculate: [Filtered company count] x [Average deal size] = TAM
+
+Top-Down Validation:
+
+Find total industry spend on similar solutions
+
+Estimate their capturable percentage
+
+Validate against bottom-up calculation
+
+Provide Three Scenarios:
+
+Conservative TAM:
+
+Tight ICP definition
+
+Lower adoption rate assumptions
+
+Smaller average deal sizes
+
+Source: [specific report/data]
+
+Calculation: [show work, including the filtered company count]
+
+Realistic TAM:
+
+Most likely ICP match rate
+
+Median deal size
+
+Reasonable market penetration
+
+Source: [specific report/data]
+
+Calculation: [show work, including the filtered company count]
+
+Optimistic TAM:
+
+Broader ICP interpretation
+
+Higher deal values
+
+Expanded use cases
+
+Source: [specific report/data]
+
+Calculation: [show work, including the filtered company count]
+
+TAM Growth Rate:
+
+Industry CAGR from public reports
+
+3-5 year TAM projection
+
+Growth drivers
+
+State the final filtered company count clearly for each scenario, and if any
+step surfaces a range instead of one number, resolve it to the high end of
+that range and say so.
+
+4. Intent Signals - Comprehensive Buying Signal Intelligence
+
+Identify 15-25 specific, trackable signals that indicate a company is in-market. Organize by signal strength and sourcing method.
+
+High-Intent Signals (Hot - Action Within 30 Days)
+
+Hiring Signals:
+
+Specific job titles being hired (e.g., "Director of Revenue Operations", "Marketing Operations Manager")
+
+Seniority of the hire (VP+ signals budget authority)
+
+Department expansion velocity (3+ hires in target dept in 90 days)
+
+Job description keywords that match their solution space
+
+How to track: Job boards, LinkedIn jobs, company careers pages
+
+Technology Change Signals:
+
+Installing/removing specific technologies (via BuiltWith, job postings mentioning tools)
+
+Migration project mentions (e.g., "Salesforce to HubSpot migration")
+
+Tech stack consolidation language in job posts
+
+New integration requirements
+
+How to track: BuiltWith alerts, job posting keywords, engineering blogs
+
+Budget & Funding Signals:
+
+Recent funding rounds (90 days)
+
+Fiscal year timing (Q4 budget finalization)
+
+Mentions of new budget allocation in earnings/press
+
+Grant/government contract awards
+
+How to track: Crunchbase, press releases, government databases
+
+Leadership Change Signals:
+
+New CXO in relevant department (CRO, CMO, CTO)
+
+First 90 days of new executive (honeymoon period)
+
+Interim executive appointments
+
+Leadership team expansion
+
+How to track: LinkedIn job changes, press releases, company announcements
+
+Problem/Pain Point Signals:
+
+Company posts about specific problems on social
+
+LinkedIn posts from employees complaining about manual processes
+
+Questions in industry communities/forums
+
+Conference presentation topics revealing struggles
+
+How to track: Social listening, community monitoring, event schedules
+
+Medium-Intent Signals (Warm - Research Phase)
+
+Content Engagement:
+
+Downloading competitor content (if visible)
+
+Engaging with category content (shares, comments on posts about the problem space)
+
+Attending category webinars
+
+Conference attendance at relevant events
+
+How to track: Event attendee lists, social engagement, community activity
+
+Technology Evaluation:
+
+Reviews left on G2/Capterra for competitors or similar tools
+
+Comparison content engagement
+
+RFP/RFI postings mentioning the category
+
+Vendor evaluation committees formed
+
+How to track: Review site activity, procurement portals, LinkedIn mentions
+
+Organizational Changes:
+
+Restructuring that creates new reporting lines for target personas
+
+Department launches (e.g., new RevOps team)
+
+Process improvement initiatives announced
+
+Digital transformation programs
+
+How to track: Press releases, LinkedIn organizational changes, job postings
+
+Technology Stack Indicators:
+
+Using prerequisite technologies (tools that create need for the solution)
+
+Over-complicated tool stack visible in job postings
+
+Multiple point solutions that should be consolidated
+
+Legacy system mentions in job posts
+
+How to track: BuiltWith, job posting analysis, employee LinkedIn profiles
+
+Community Activity:
+
+Joining relevant Slack communities
+
+Asking questions in forums about the problem space
+
+Posting in peer groups about challenges
+
+Attending industry meetups
+
+How to track: Community membership lists, forum monitoring, event RSVPs
+
+Low-Intent Signals (Cold - General Fit Indicators)
+
+Company Growth Signals:
+
+Rapid headcount growth (30%+ YoY)
+
+Revenue milestones mentioned
+
+Geographic expansion announcements
+
+New office openings
+
+How to track: LinkedIn headcount tracking, press releases, Crunchbase
+
+Market Position Changes:
+
+Moving upmarket/downmarket
+
+New product line launches
+
+Entering new verticals
+
+Partnership announcements
+
+How to track: Press releases, product announcements, customer case studies
+
+Compliance & Security Events:
+
+New compliance requirements (SOC2, ISO, GDPR)
+
+Security certification pursuits
+
+Audit preparation mentioned
+
+Data privacy role hires
+
+How to track: Job postings, security certification databases, press releases
+
+Operational Maturity:
+
+Process documentation initiatives
+
+System integration projects
+
+Data infrastructure investments
+
+Automation pilots mentioned
+
+How to track: Engineering blogs, job postings, LinkedIn posts from employees
+
+Industry-Specific Triggers:
+
+Regulatory changes affecting their industry
+
+Market disruption events
+
+Competitive pressure indicators
+
+Customer demand shifts
+
+How to track: Industry news, trade publications, analyst reports
+
+Negative Intent Signals (Avoid)
+
+Recently Purchased:
+
+Implemented competitor in last 6-12 months
+
+Long-term contracts announced
+
+Partnership press releases with competitors
+
+Case studies published with alternatives
+
+How to track: Press releases, G2 reviews, customer logo monitoring
+
+Budget Constraints:
+
+Layoffs or hiring freezes
+
+Down-round funding
+
+Cost-cutting initiatives announced
+
+Executive departures
+
+How to track: News monitoring, LinkedIn, Crunchbase
+
+Wrong Timing:
+
+Mid-implementation of adjacent solution
+
+Recent major system migration
+
+M&A integration periods
+
+Leadership vacuum
+
+How to track: Press releases, LinkedIn, earnings calls
+
+5. Customer Economics & LTV Modeling
+
+Pricing Intelligence:
+
+Public pricing (plans, tiers, add-ons)
+
+Pricing model (per seat, usage-based, flat fee, hybrid)
+
+Typical contract terms (monthly, annual, multi-year)
+
+Discounting patterns (annual prepay incentives)
+
+Expansion revenue opportunities
+
+Deal Size Estimation:
+
+Entry-level deal value
+
+Mid-market typical deal
+
+Enterprise average deal
+
+Supporting evidence (customer size + plan type correlations)
+
+LTV Calculation:
+
+Average contract value (ACV)
+
+Estimated gross retention rate (from churn hints, industry benchmarks)
+
+Expansion/upsell potential (% of customers that upgrade)
+
+Customer lifecycle estimate
+
+LTV formula with assumptions: LTV = ACV x (1/churn rate) x (1 + expansion rate)
+
+Customer Acquisition:
+
+Estimated CAC from hiring/marketing signals
+
+LTV:CAC ratio implications
+
+Payback period estimates
+
+6. Go-To-Market Intelligence
+
+Sales Motion:
+
+Self-serve vs sales-led indicators
+
+Sales cycle length estimates
+
+Demo/trial availability
+
+Procurement complexity level
+
+Contract size thresholds for different sales approaches
+
+Marketing Strategy:
+
+Primary channels (content, paid, partnerships, community)
+
+Content themes and topics
+
+SEO keywords they target
+
+Event presence (conferences, webinars)
+
+Community building efforts
+
+Customer Success Indicators:
+
+Onboarding claims (time, resources)
+
+Support model (self-service, CSM-led)
+
+Community/user groups
+
+Educational resources
+
+Expansion/upsell motions
+
+7. Market Position & Competitive Intelligence
+
+Direct Competitors:
+
+Primary competitors mentioned or compared
+
+Competitive positioning (faster, cheaper, more features)
+
+Market category they claim (create new category vs established)
+
+Alternatives & Substitutes:
+
+DIY/manual processes they replace
+
+Adjacent solutions buyers might consider
+
+Switching costs from alternatives
+
+"Do nothing" competitor
+
+Market Dynamics:
+
+Market maturity (emerging, growth, mature)
+
+Consolidation trends
+
+Technology shifts enabling/threatening the solution
+
+Category creation vs category leadership
+
+Pricing Positioning:
+
+Premium vs value positioning
+
+Price comparisons to competitors (if findable)
+
+8. Company Growth Signals
+
+Funding & Financial:
+
+Latest funding round (date, amount, stage, lead investors)
+
+Total capital raised
+
+Valuation (if public)
+
+Revenue hints (if available from press/filings)
+
+Team Growth:
+
+Current headcount (LinkedIn, about page, Crunchbase)
+
+Growth rate (6mo, 1yr, 2yr trends)
+
+Department-specific growth (Sales, Eng, Marketing ratios)
+
+Key executive hires
+
+Open positions by department with links
+
+Geographic Expansion:
+
+Office locations
+
+Remote-first signals
+
+International market entry
+
+Localization efforts (languages, currency support)
+
+Product Expansion:
+
+New features/products launched
+
+Acquisition of other companies
+
+Platform evolution direction
+
+API/developer platform maturity
+
+9. Trackable CRM Data Points for Sales Qualification
+
+List 12-18 specific fields to track in CRM/enrichment workflows:
+
+Firmographic:
+
+Employee count (range)
+
+Industry (specific sub-segment)
+
+Revenue estimate (range)
+
+Geographic HQ location
+
+Number of locations
+
+Years in business
+
+Funding stage
+
+Public/Private status
+
+Technographic:
+
+CRM system in use
+
+Marketing automation platform
+
+[Specific must-have tool 1]
+
+[Specific must-have tool 2]
+
+[Technology they'd replace]
+
+Total martech stack count
+
+Organizational:
+
+[Target buyer role] exists (Yes/No)
+
+Size of [target department] team
+
+Reports to (which C-level)
+
+Recent hires in [target dept] (90 days)
+
+Organizational structure type
+
+Behavioral:
+
+Website visits (if trackable)
+
+Content downloads
+
+Event attendance
+
+Community membership
+
+Social engagement level
+
+Intent/Timing:
+
+Recent funding (date)
+
+New executive start date
+
+Open roles in target dept (count)
+
+Fiscal year timing
+
+Contract renewal windows (if known)
+
+For each field, specify:
+
+Data source: Where to get this (LinkedIn, BuiltWith, Crunchbase, job boards)
+
+Enrichment method: API, manual, scraping, purchased data
+
+Qualification logic: What values = good fit
+
+Update frequency: How often to refresh
+
+10. Research Sources & Verification
+
+For every claim, provide:
+
+Specific URL where information was found
+
+Date published/updated
+
+Direct quotes when relevant
+
+Confidence level: Confirmed (on website), Inferred (from signals), Estimated (calculated)
+
+Source Checklist:
+
+Company website (homepage, about, pricing, customers, blog)
+
+LinkedIn company page and employee profiles
+
+Crunchbase (free public data)
+
+G2/Capterra/TrustRadius reviews
+
+Press releases and media coverage
+
+Competitor websites for positioning
+
+Industry reports (free versions)
+
+Government/census data
+
+Trade association reports
+
+Job postings (lever, greenhouse, LinkedIn, indeed)
+
+BuiltWith public technology reports
+
+Academic papers/research
+
+Conference presentations/agendas
+
+Podcast appearances
+
+Industry news/trade publications
+
+Output Format:
+
+Use headers, tables, and bullet points for scannability
+
+Include confidence levels on all estimates (High/Medium/Low)
+
+Separate facts from inferences clearly
+
+Show calculations with assumptions
+
+Flag data gaps explicitly
+
+Provide working links to all sources

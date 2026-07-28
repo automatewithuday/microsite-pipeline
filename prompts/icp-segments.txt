@@ -1,0 +1,115 @@
+Research this B2B company "{Company}" and create a concise ICP segment
+breakdown.
+
+Context:
+
+Company Website: {url}
+
+Company LinkedIn: {linkedin}
+
+Research: {research}
+
+Research Requirements:
+
+Analyze the following to identify distinct ICP segments:
+
+Product & Target Market
+
+What they sell and core value prop
+
+Industries/verticals they serve
+
+Customer examples and case studies
+
+Pain points they solve
+
+Company Size & Maturity Indicators
+
+Employee count ranges mentioned
+
+Revenue bands or funding stages referenced
+
+Team structure requirements
+
+Tool stack sophistication needed
+
+Buyer Personas & Departments
+
+Primary buyers (titles/roles)
+
+Departments they target
+
+Decision-maker levels
+
+Use Cases & Differentiation
+
+Specific problems solved by segment
+
+Segment-specific features or messaging
+
+Industry or size-based variations
+
+Output Format:
+
+Structure your response as 2-4 primary ICP segments. For each segment,
+provide these five fields, using their language from the website and content:
+
+segmentName: [Segment Name - Be Specific]
+
+companyCharacteristic: [Company characteristic: size, industry, or defining attribute]
+
+keyPainPoint: [Key pain point or buying trigger for this segment]
+
+primaryBuyer: [Department/persona most likely to buy]
+
+differentiatingNeed: [Differentiating need or use case vs other segments]
+
+Output Rules:
+
+Segment Naming:
+
+Be specific, not generic (e.g., "Series A-B B2B SaaS Companies" not "Mid-Market SaaS")
+
+Use their language from website/content
+
+Reference industry + size + attribute when possible
+
+Bullet Format:
+
+Maximum 15 words per field
+
+Focus on facts, not marketing fluff
+
+Include specific numbers when available (employee counts, team sizes)
+
+Cite segment-specific pain points or needs
+
+Segments to Identify:
+
+Primary segment (their core ICP)
+
+Secondary segment (emerging or important but different needs)
+
+Optional: Tertiary segments if clearly differentiated
+
+Order segments from strongest fit to weakest fit. Facts only, no flattery.
+Use periods and commas only, never an em dash, in every field.
+
+Sources to Check:
+
+Website (about, pricing, customers, case studies, blog)
+
+G2/Capterra reviews (look for reviewer company profiles)
+
+Customer logos and testimonials
+
+Job postings (signals about customer types)
+
+LinkedIn posts and content themes
+
+Competitor comparison pages
+
+Return ONLY a JSON object in exactly this shape, nothing else, no prose
+before or after it, no code fences, no explanation:
+
+{"segments": [{"segmentName": "...", "companyCharacteristic": "...", "keyPainPoint": "...", "primaryBuyer": "...", "differentiatingNeed": "..."}]}

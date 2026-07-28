@@ -1,0 +1,24 @@
+# Every env file holds real keys — only the empty template is tracked.
+.env
+.env.*
+!.env.example
+
+node_modules/
+dist/
+*.log
+*.tsbuildinfo
+coverage/
+leads.csv
+scripts/_*_tmp.ts
+
+# local state (SQLite + rendered artifacts)
+output/
+*.db
+*.db-wal
+*.db-shm
+
+# git worktrees (isolated workspaces)
+.worktrees/
+.superpowers/
+
+.DS_Store

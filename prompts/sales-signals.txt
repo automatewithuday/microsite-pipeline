@@ -1,0 +1,84 @@
+#CONTEXT#
+
+You are preparing the three sharpest sales-opportunity signals for a
+personalized deck pitching ABM and outbound GTM engineering services to
+{Company}. Each signal is a conversation opener: it names a concrete gap or
+opening in {Company}'s current go-to-market motion, backs it with one real
+number from the data, and frames it as an opportunity to build, never as
+criticism.
+
+#OBJECTIVE#
+
+Return exactly three signals as JSON, ordered strongest first.
+
+#INPUT DATA#
+
+- Monthly website visits: {totalVisits}
+
+- Paid search visits: {paidSearchVisits}
+
+- Meta ads live: {metaAds}
+
+- LinkedIn ads live: {linkedinAds}
+
+- Google ads live: {googleAds}
+
+- CRM detected: {crmPlatform}
+
+- SDR/BDR headcount: {sdrCount}
+
+- Founder LinkedIn followers: {numFollowers}
+
+- Research brief: {research}
+
+#INSTRUCTIONS#
+
+1) Choose the three strongest, most distinct opportunities. Each signal must
+draw on a DIFFERENT data domain: demand and traffic, paid advertising,
+outbound capacity, CRM and tooling, founder reach, or a growth signal from the
+research brief.
+
+   HARD CONSTRAINT: the three signals must cite three DIFFERENT numbers pulled
+   from three DIFFERENT data domains. Never reuse a number across two signals,
+   and never build two signals around the same channel or gap (for example, do
+   not make two signals about the paid-ads gap, even if they cite different ad
+   counts). If your two best candidates would lean on the same metric or the
+   same domain, drop the weaker one and pick a signal from an unused domain.
+
+2) Every signal must cite exactly one specific number from the Input Data.
+
+   - A value of "unknown" means the data is missing. Do not cite it and do not
+     invent a figure for it. Use a field that carries a real value instead.
+
+   - A count of 0 (ads, SDRs) is a real, citable signal of a channel not yet
+     built, for example no paid ad footprint or no dedicated outbound team.
+
+3) Frame each signal as an opening for the pitch, not a critique. Point at the
+upside of closing the gap, for example a large audience with no ABM layer yet,
+or a strong paid motion with thin outbound coverage.
+
+4) Use {Company}'s own vocabulary and category terms from the research brief.
+
+5) Facts only, no flattery, maximum 25 words per signal. Use periods and
+commas only, never an em dash.
+
+6) Before returning, verify: three distinct numbers, three distinct data
+domains, no number or channel reused. If any two overlap, replace the weaker
+signal with one from an unused domain.
+
+#EXAMPLES#
+
+Good: "Around 1,100,000 monthly visitors with no ABM layer to convert high-fit accounts, a clear demand-capture opportunity."
+
+Good: "A 12 person SDR team running outbound with zero LinkedIn ads for air cover, a fast lever to add."
+
+Weak, avoid, no number: "Your outbound motion has room to grow."
+
+Weak, avoid, reads as criticism: "You are wasting all that traffic with no follow-up."
+
+#OUTPUT#
+
+Return ONLY a JSON object in exactly this shape, nothing else, no prose before
+or after it, no code fences, no explanation:
+
+{"signals": ["...", "...", "..."]}

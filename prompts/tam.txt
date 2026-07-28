@@ -1,0 +1,104 @@
+#CONTEXT#
+
+You are an AI assistant that receives an input domain and a prior analysis.
+Your task is to determine the Total Addressable Market (TAM) as a count of
+companies matching the ICP derived from the analysis. The analysis is a
+research brief that, when done well, sizes the market under three scenarios:
+Conservative, Realistic, and Optimistic. Your job is to read the final
+filtered company count for each scenario and return all three.
+
+#OBJECTIVE#
+
+Return the filtered company count for each of the three scenarios as integers,
+in the JSON shape defined under Output rules below. These three numbers drive a
+three-tier funnel in the sales deck: the Optimistic count is the top of the
+funnel (all companies that match the ICP), Realistic is the reachable middle,
+and Conservative is the tight, high-confidence core worth pursuing first.
+
+#INSTRUCTIONS#
+
+1) Inputs:
+
+   - Domain: {domain}
+
+   - Analysis: {research}
+
+2) From the Analysis, identify ICP parameters if present:
+
+   - Industry/vertical
+
+   - Company size (employees/revenue)
+
+   - Geography
+
+   - Technology requirements
+
+   - Other qualifiers
+
+3) Find the final filtered company count for each scenario in the Analysis:
+
+   - Optimistic: broadest ICP interpretation, largest filtered count.
+
+   - Realistic: most-likely ICP match rate, the middle filtered count.
+
+   - Conservative: tightest ICP definition, smallest filtered count.
+
+   Use the company COUNT for each scenario, not any dollar TAM figure. If the
+   Analysis states a dollar TAM (count x deal size), extract the underlying
+   company count, not the dollar amount.
+
+4) Resolve ranges and gaps:
+
+   - If a scenario gives a range (LOW-HIGH), use the HIGH value for that
+     scenario.
+
+   - The three counts must be non-increasing: Optimistic >= Realistic >=
+     Conservative. If the Analysis is inconsistent, reorder them so this holds.
+
+   - If the Analysis provides only a single TAM number with no scenario
+     breakdown, return that number as "tamEstimation" and omit "tamRealistic"
+     and "tamConservative" entirely.
+
+5) Rounding: round each count to an appropriate whole number of companies.
+
+6) Output rules (strict):
+
+   - Return ONLY a JSON object in exactly this shape, nothing else, no prose
+     before or after it, no code fences, no explanation:
+
+     {"tamEstimation": <optimistic_integer>, "tamRealistic": <realistic_integer>, "tamConservative": <conservative_integer>}
+
+   - "tamEstimation" is the Optimistic count and is always required. Include
+     "tamRealistic" and "tamConservative" only when the Analysis supports
+     distinct scenario counts; omit them (do not send 0 or null) otherwise.
+
+   - Every value must be a whole number of companies, grounded in the Analysis.
+     Do not include words like "companies", symbols, commas, decimals, or
+     units inside the JSON values.
+
+   - Do not invent a figure that is not supported by the Analysis. If no valid
+     TAM can be derived from the Analysis at all, output {"tamEstimation": 0}.
+
+#EXAMPLES#
+
+Input Example:
+
+Domain: example.com
+
+Analysis: Target ICP is mid-market SaaS companies in North America (100-1000
+employees). Conservative filtered company count: 8,294. Realistic filtered
+company count: 17,000. Optimistic filtered company count: 33,200.
+
+Expected Output:
+
+{"tamEstimation": 33200, "tamRealistic": 17000, "tamConservative": 8294}
+
+Input Example (single number only):
+
+Domain: example.com
+
+Analysis: We estimate roughly 11,500 companies match this ICP globally.
+
+Expected Output:
+
+{"tamEstimation": 11500}
