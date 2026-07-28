@@ -338,7 +338,11 @@ export function removeSlot(html: string, slot: string): string {
 
 const CREAM_DEFAULT = "#F5EFE6";
 
-export function buildMicrositeHtml(lead: LeadRow, templateHtml: string): string {
+export function buildMicrositeHtml(
+  lead: LeadRow,
+  templateHtml: string,
+  library: ProofLibrary | null = null
+): string {
   const d = extractMicrositeData(lead);
   let html = templateHtml;
 
@@ -355,6 +359,32 @@ export function buildMicrositeHtml(lead: LeadRow, templateHtml: string): string 
   if (d.point1 === null) html = removeSlot(html, "point1");
   if (d.point2 === null) html = removeSlot(html, "point2");
   if (logoUrl === "") html = removeSlot(html, "logo");
+
+  // 1b. Library-driven pages. Industry steers the case pick; a missing or
+  //     empty library drops the Work and Plan pages entirely (removeSlot),
+  //     so the deck degrades instead of rendering dangling [tokens].
+  const companyData = lead.company_data as { merged?: { industry?: unknown } } | null | undefined;
+  const mergedForIndustry = isRecord(companyData?.merged) ? companyData.merged : undefined;
+  const industry =
+    typeof mergedForIndustry?.industry === "string" && mergedForIndustry.industry.length > 0
+      ? mergedForIndustry.industry
+      : null;
+
+  const cases = library && library.caseStudies.length > 0 ? pickDeckCaseStudies(library, industry) : [];
+  if (cases.length === 0) {
+    html = removeSlot(html, "work");
+  } else if (cases.length === 1) {
+    html = removeSlot(html, "case2");
+  }
+
+  const phases = library ? library.plan30day.slice(0, 4) : [];
+  if (phases.length === 0) {
+    html = removeSlot(html, "plan30");
+  } else {
+    for (let i = phases.length; i < 4; i++) {
+      html = removeSlot(html, `plan-phase-${i + 1}`);
+    }
+  }
 
   // 2. Token replacements. Longest-prefix tokens first so e.g.
   //    "[Company Characteristic 1]" is replaced before "[Company]".
@@ -384,6 +414,23 @@ export function buildMicrositeHtml(lead: LeadRow, templateHtml: string): string 
     ["[Signal 3]", e(d.signals[2])],
     ["[CRM]", e(d.crmPlatform)],
   ];
+
+  for (const [i, c] of cases.entries()) {
+    const n = i + 1;
+    const metric = c.metrics[0];
+    replacements.push(
+      [`[Case Client ${n}]`, e(c.client)],
+      [`[Case Problem ${n}]`, e(c.problem)],
+      [`[Case Approach ${n}]`, e(c.approach)],
+      [`[Case Metric Value ${n}]`, e(metric?.value ?? "")],
+      [`[Case Metric Label ${n}]`, e(metric?.label ?? "")]
+    );
+  }
+  for (const [i, p] of phases.entries()) {
+    const n = i + 1;
+    replacements.push([`[Plan Title ${n}]`, e(p.title)], [`[Plan Deliverables ${n}]`, e(p.deliverables.join(" "))]);
+  }
+
   for (const [token, value] of replacements) {
     html = html.split(token).join(value);
   }

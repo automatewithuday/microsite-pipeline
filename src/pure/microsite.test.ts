@@ -231,6 +231,28 @@ describe("removeSlot", () => {
   });
 });
 
+// Proof-library fixture shared by buildMicrositeHtml's case/plan tests
+// (both the fake-template block and the real-committed-template block).
+const FULL_LIB: ProofLibrary = {
+  profile: { positioning: "p" },
+  caseStudies: [
+    { id: "dp", client: "DailyPay", verticalTags: ["fintech"], motionTags: ["outbound"],
+      problem: "Enterprise outbound at scale", approach: "Built the engine",
+      metrics: [{ value: "2,700+", label: "booked demos" }, { value: "9", label: "ignored" }] },
+    { id: "re", client: "Reactivation", verticalTags: ["saas"], motionTags: ["abm"],
+      problem: "Dead accounts", approach: "CTV + ABM replay",
+      metrics: [{ value: "$250K", label: "opportunity revenue" }] },
+  ],
+  plays: [{ id: "pl", name: "n", whenTags: ["w"], steps: ["s"] }],
+  platforms: [],
+  plan30day: [
+    { title: "Audit", deliverables: ["Full review.", "One document."] },
+    { title: "Architect", deliverables: ["SOPs."] },
+    { title: "Automate", deliverables: ["Workflows shipped."] },
+    { title: "Align", deliverables: ["Sequences live."] },
+  ],
+} as unknown as ProofLibrary;
+
 describe("buildMicrositeHtml", () => {
   const FAKE_TEMPLATE = `<!doctype html><html><head><style>
 :root{--brand-primary:var(--cream);--brand-secondary:var(--cream);}
@@ -246,7 +268,16 @@ describe("buildMicrositeHtml", () => {
 <section data-label="TAM">[Z] [Y] [X]</section>
 <section data-label="Signals">[Signal 1] [Signal 2] [Signal 3]</section>
 <section data-label="Integration">PLUGS INTO [CRM]</section>
-<section data-label="Proof">STATIC PROOF 2,700+ $250K</section>
+<section data-label="Work" data-slot="work">
+<article data-slot="case1">[Case Client 1] [Case Problem 1] [Case Approach 1] [Case Metric Value 1] [Case Metric Label 1]</article>
+<article data-slot="case2">[Case Client 2] [Case Problem 2] [Case Approach 2] [Case Metric Value 2] [Case Metric Label 2]</article>
+</section>
+<section data-label="Plan" data-slot="plan30">
+<div data-slot="plan-phase-1">P1 [Plan Title 1] [Plan Deliverables 1]</div>
+<div data-slot="plan-phase-2">P2 [Plan Title 2] [Plan Deliverables 2]</div>
+<div data-slot="plan-phase-3">P3 [Plan Title 3] [Plan Deliverables 3]</div>
+<div data-slot="plan-phase-4">P4 [Plan Title 4] [Plan Deliverables 4]</div>
+</section>
 <section data-label="CTA">[Company]</section>
 </body></html>`;
 
@@ -339,9 +370,69 @@ describe("buildMicrositeHtml", () => {
     expect(out).not.toContain("--brand-primary: #111111");
   });
 
-  it("never alters page 7 proof text", () => {
-    const out = buildMicrositeHtml(lead(), FAKE_TEMPLATE);
-    expect(out).toContain("STATIC PROOF 2,700+ $250K");
+  it("never rewrites page-7 case metrics: proof-library values render verbatim", () => {
+    const out = buildMicrositeHtml(lead(), FAKE_TEMPLATE, FULL_LIB);
+    expect(out).toContain("2,700+");
+    expect(out).toContain("$250K");
+  });
+
+  it("fills case tokens from the library (first metric only, verbatim)", () => {
+    const out = buildMicrositeHtml(lead(), FAKE_TEMPLATE, FULL_LIB);
+    expect(out).toContain("DailyPay");
+    expect(out).toContain("2,700+");
+    expect(out).toContain("booked demos");
+    expect(out).not.toContain("ignored"); // only metrics[0] renders
+    expect(out).not.toMatch(/\[Case [A-Za-z ]+\]/);
+  });
+
+  it("fills plan tokens, joining deliverables with a space", () => {
+    const out = buildMicrositeHtml(lead(), FAKE_TEMPLATE, FULL_LIB);
+    expect(out).toContain("Audit");
+    expect(out).toContain("Full review. One document.");
+    expect(out).not.toMatch(/\[Plan [A-Za-z ]+\]/);
+  });
+
+  it("industry steers the case pick", () => {
+    const withIndustry = lead({ company_data: { merged: { name: "Acme Inc", industry: "SaaS" } } });
+    const out = buildMicrositeHtml(withIndustry, FAKE_TEMPLATE, FULL_LIB);
+    // saas-tagged "Reactivation" becomes case 1
+    expect(out.indexOf("Reactivation")).toBeLessThan(out.indexOf("DailyPay"));
+  });
+
+  it("removes the whole work section when library is null", () => {
+    const out = buildMicrositeHtml(lead(), FAKE_TEMPLATE, null);
+    expect(out).not.toContain('data-slot="work"');
+    expect(out).not.toContain("[Case Client 1]");
+    expect(out).not.toContain('data-slot="plan30"');
+    expect(out).not.toContain("[Plan Title 1]");
+    // The rest of the deck still renders.
+    expect(out).toContain("Acme Inc");
+  });
+
+  it("removes only case2 when the library has one case study", () => {
+    const oneCase = { ...FULL_LIB, caseStudies: [FULL_LIB.caseStudies[0]] } as ProofLibrary;
+    const out = buildMicrositeHtml(lead(), FAKE_TEMPLATE, oneCase);
+    expect(out).toContain("DailyPay");
+    expect(out).not.toContain('data-slot="case2"');
+    expect(out).not.toContain("[Case Client 2]");
+  });
+
+  it("removes unused plan phase slots when fewer than 4 phases", () => {
+    const twoPhases = { ...FULL_LIB, plan30day: FULL_LIB.plan30day.slice(0, 2) } as ProofLibrary;
+    const out = buildMicrositeHtml(lead(), FAKE_TEMPLATE, twoPhases);
+    expect(out).toContain("Architect");
+    expect(out).not.toContain("P3");
+    expect(out).not.toContain("P4");
+    expect(out).not.toContain("[Plan Title 3]");
+  });
+
+  it("escapes untrusted-looking library text in case tokens", () => {
+    const evil = { ...FULL_LIB, caseStudies: [
+      { ...FULL_LIB.caseStudies[0], problem: '<img onerror=x>' },
+      FULL_LIB.caseStudies[1],
+    ] } as ProofLibrary;
+    const out = buildMicrositeHtml(lead(), FAKE_TEMPLATE, evil);
+    expect(out).toContain("&lt;img onerror=x&gt;");
   });
 });
 
@@ -368,19 +459,25 @@ describe("buildMicrositeHtml against the real committed template", () => {
     } as unknown as LeadRow;
   }
 
-  it("leaves no [bracket] tokens in the real rendered output", () => {
-    const out = buildMicrositeHtml(realLead(), realTemplate);
+  it("leaves no [bracket] tokens in the real rendered output when the library is populated", () => {
+    const out = buildMicrositeHtml(realLead(), realTemplate, FULL_LIB);
     const leftover = out.match(/\[[A-Za-z0-9 ]+\]/g);
     expect(leftover).toBeNull();
   });
 
-  it("renders all three TAM funnel numbers (numeric adjustedTam/adjustedTam2)", () => {
+  it("leaves no [bracket] tokens in the real rendered output when the library is null (degradation)", () => {
+    const out = buildMicrositeHtml(realLead(), realTemplate, null);
+    const leftover = out.match(/\[[A-Za-z0-9 ]+\]/g);
+    expect(leftover).toBeNull();
+  });
+
+  it("renders all three Market funnel numbers (numeric adjustedTam/adjustedTam2)", () => {
     const l = realLead();
     (l.derived as Record<string, unknown>).adjustedTam = 1800000; // numeric, as computeDerived emits
     (l.derived as Record<string, unknown>).adjustedTam2 = 1200000;
     const out = buildMicrositeHtml(l, realTemplate);
-    // Grab the TAM section and confirm all three tiers carry a number.
-    const start = out.indexOf('data-label="TAM"');
+    // Grab the Market section and confirm all three tiers carry a number.
+    const start = out.indexOf('data-label="Market"');
     const tam = out.slice(start, out.indexOf("</section>", start));
     expect(tam).toContain("2,000,000"); // [Z]
     expect(tam).toContain("1,800,000"); // [Y]
@@ -393,14 +490,23 @@ describe("buildMicrositeHtml against the real committed template", () => {
     expect(out).not.toContain("<b>bold</b> signal one");
   });
 
-  it("keeps the page-7 proof block byte-identical to the template", () => {
+  it("removes the Work and Plan sections from the real template when no library is passed (degradation)", () => {
     const out = buildMicrositeHtml(realLead(), realTemplate);
-    const proofOf = (h: string) => {
-      const start = h.indexOf('data-label="Proof"');
+    expect(out).not.toContain('data-label="Work"');
+    expect(out).not.toContain('data-label="Plan"');
+  });
+
+  it("fills the Work and Plan sections of the real template verbatim when a library is passed", () => {
+    const out = buildMicrositeHtml(realLead(), realTemplate, FULL_LIB);
+    const sectionOf = (h: string, label: string) => {
+      const start = h.indexOf(`data-label="${label}"`);
       const end = h.indexOf("</section>", start) + "</section>".length;
       return h.slice(start, end);
     };
-    expect(proofOf(out)).toBe(proofOf(realTemplate));
+    expect(sectionOf(out, "Work")).toContain("DailyPay");
+    expect(sectionOf(out, "Work")).toContain("2,700+");
+    expect(sectionOf(out, "Plan")).toContain("Audit");
+    expect(sectionOf(out, "Plan")).toContain("Full review. One document.");
   });
 
   it("injects a non-cream readable brand override into :root", () => {
