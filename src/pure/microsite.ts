@@ -219,6 +219,25 @@ export function pickReadableBrandBg(primary: string, secondary: string): string 
   return null;
 }
 
+// Accent selection for pages with a LIGHT background: the inverse of
+// pickReadableBrandBg. Returns the first brand color dark enough to be read
+// ON white (contrast >= 4.5 vs #FFFFFF), or null (caller keeps the ink default).
+const WHITE_LUM = 1.0;
+function contrastVsWhite(hex: string): number | null {
+  const rgb = parseHex(hex);
+  if (!rgb) return null;
+  const l = relativeLuminance(rgb);
+  return (WHITE_LUM + 0.05) / (l + 0.05);
+}
+
+export function pickReadableAccent(primary: string, secondary: string): string | null {
+  const pc = contrastVsWhite(primary);
+  if (pc !== null && pc >= 4.5) return primary;
+  const sc = contrastVsWhite(secondary);
+  if (sc !== null && sc >= 4.5) return secondary;
+  return null;
+}
+
 // ---------------------------------------------------------------------
 // Themed logo pick. Brandfetch theme "dark" = dark-colored logo, meant for
 // LIGHT backgrounds; "light" = light-colored, for DARK backgrounds.

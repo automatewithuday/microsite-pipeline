@@ -7,6 +7,7 @@ import {
   extractMicrositeData,
   escapeHtml,
   pickReadableBrandBg,
+  pickReadableAccent,
   removeSlot,
   buildMicrositeHtml,
   pickThemedLogoUrl,
@@ -507,5 +508,17 @@ describe("buildMicrositeHtml themed logo integration", () => {
     const out = buildMicrositeHtml(lead, template);
     expect(out).toContain('src="https://cdn.bf/light-logo.svg"');
     expect(out).not.toContain('src="https://cdn.bf/dark-logo.svg"');
+  });
+});
+
+describe("pickReadableAccent", () => {
+  it("returns the primary when it is dark enough against white", () => {
+    expect(pickReadableAccent("#0B4F6C", "#cccccc")).toBe("#0B4F6C");
+  });
+  it("falls back to the secondary when the primary is too light", () => {
+    expect(pickReadableAccent("#cccccc", "#0B4F6C")).toBe("#0B4F6C");
+  });
+  it("returns null when neither is dark enough (or unparseable)", () => {
+    expect(pickReadableAccent("#ffffff", "not-a-color")).toBeNull();
   });
 });

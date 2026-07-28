@@ -1,0 +1,400 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>Private follow-up · [Company]</title>
+<style>
+  :root {
+    --paper: #FAF7F2;
+    --ink: #141414;
+    --ink-soft: #3d3d3d;
+    --ink-faint: #8a857c;
+    --rule: #DED8CC;
+    --brand-accent: #141414;
+    --serif: "Iowan Old Style", "Palatino Linotype", Palatino, Georgia, "Times New Roman", serif;
+    --sans: "Avenir Next", Avenir, "Helvetica Neue", Helvetica, Arial, sans-serif;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  html { scroll-behavior: smooth; }
+
+  body {
+    background: var(--paper);
+    background-image: radial-gradient(ellipse 120% 60% at 50% -10%, #FFFDF9 0%, var(--paper) 60%);
+    color: var(--ink);
+    font-family: var(--sans);
+    font-size: 17px;
+    line-height: 1.65;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  .page {
+    max-width: 720px;
+    margin: 0 auto;
+    padding: 72px 28px 96px;
+  }
+
+  /* ------------------------------------------------ header */
+  header.masthead {
+    padding-bottom: 40px;
+    border-bottom: 1px solid var(--ink);
+  }
+
+  .masthead .kicker {
+    font-family: var(--sans);
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+    margin-bottom: 28px;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+  }
+
+  .masthead .kicker::after {
+    content: "";
+    flex: 1;
+    height: 1px;
+    background: var(--rule);
+  }
+
+  .masthead img.logo {
+    max-height: 44px;
+    max-width: 180px;
+    object-fit: contain;
+    display: block;
+    margin-bottom: 32px;
+  }
+
+  .masthead h1 {
+    font-family: var(--serif);
+    font-weight: 500;
+    font-size: clamp(38px, 7vw, 56px);
+    line-height: 1.08;
+    letter-spacing: -0.01em;
+  }
+
+  .masthead h1 em {
+    font-style: italic;
+    color: var(--brand-accent);
+  }
+
+  .masthead .standfirst {
+    margin-top: 24px;
+    font-size: 17px;
+    color: var(--ink-soft);
+    max-width: 54ch;
+  }
+
+  /* ------------------------------------------------ sections */
+  section {
+    padding: 64px 0 8px;
+  }
+
+  .sec-head {
+    display: flex;
+    align-items: baseline;
+    gap: 18px;
+    margin-bottom: 36px;
+  }
+
+  .sec-num {
+    font-family: var(--serif);
+    font-size: 44px;
+    font-weight: 400;
+    font-variant-numeric: tabular-nums;
+    color: var(--brand-accent);
+    line-height: 1;
+  }
+
+  .sec-label {
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.22em;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+    padding-bottom: 6px;
+  }
+
+  .sec-head .sec-rule {
+    flex: 1;
+    height: 1px;
+    background: var(--rule);
+    align-self: center;
+  }
+
+  section h2 {
+    font-family: var(--serif);
+    font-weight: 500;
+    font-size: 28px;
+    line-height: 1.25;
+    margin-bottom: 20px;
+    letter-spacing: -0.005em;
+  }
+
+  /* ------------------------------------------------ shared item shapes */
+  .fu-item { margin-bottom: 34px; }
+
+  .fu-item-title {
+    font-family: var(--serif);
+    font-size: 21px;
+    font-weight: 600;
+    line-height: 1.3;
+    margin-bottom: 8px;
+  }
+
+  .fu-item-title a { color: inherit; text-decoration-color: var(--rule); text-underline-offset: 3px; }
+  .fu-item-title a:hover { text-decoration-color: var(--brand-accent); }
+
+  .fu-item-body {
+    color: var(--ink-soft);
+    margin-bottom: 10px;
+  }
+
+  .fu-para {
+    color: var(--ink-soft);
+    margin-bottom: 18px;
+  }
+
+  .fu-relevance {
+    font-family: var(--serif);
+    font-style: italic;
+    font-size: 17px;
+    color: var(--ink);
+    border-left: 2px solid var(--brand-accent);
+    padding-left: 14px;
+    margin: 10px 0 14px;
+  }
+
+  .fu-list {
+    list-style: none;
+    margin: 6px 0 12px;
+  }
+
+  .fu-list li {
+    color: var(--ink-soft);
+    padding: 5px 0 5px 22px;
+    position: relative;
+  }
+
+  .fu-list li::before {
+    content: "—";
+    position: absolute;
+    left: 0;
+    color: var(--brand-accent);
+  }
+
+  /* numbered step rows (playbook, 30-day plan) */
+  .fu-step {
+    display: grid;
+    grid-template-columns: 56px 1fr;
+    gap: 0 18px;
+    padding: 22px 0;
+    border-top: 1px solid var(--rule);
+  }
+
+  .fu-step:last-child { border-bottom: 1px solid var(--rule); }
+
+  .fu-step-num {
+    font-family: var(--serif);
+    font-size: 26px;
+    font-variant-numeric: tabular-nums;
+    color: var(--brand-accent);
+    line-height: 1.2;
+  }
+
+  .fu-step .fu-item-title { font-size: 19px; margin-bottom: 6px; }
+  .fu-step .fu-item-body { margin-bottom: 0; }
+
+  /* case studies */
+  .fu-case {
+    border-top: 1px solid var(--ink);
+    padding: 30px 0 26px;
+  }
+
+  .fu-case-client {
+    font-family: var(--serif);
+    font-size: 24px;
+    font-weight: 600;
+    margin-bottom: 6px;
+  }
+
+  .fu-case .fu-item-body strong {
+    color: var(--ink);
+    font-weight: 600;
+  }
+
+  .fu-metrics {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 28px 44px;
+    margin-top: 22px;
+  }
+
+  .fu-metric { display: flex; flex-direction: column; }
+
+  .fu-metric-value {
+    font-family: var(--serif);
+    font-size: 32px;
+    font-weight: 600;
+    font-variant-numeric: tabular-nums;
+    color: var(--brand-accent);
+    line-height: 1.15;
+    letter-spacing: -0.01em;
+  }
+
+  .fu-metric-label {
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--ink-faint);
+    margin-top: 6px;
+    max-width: 22ch;
+  }
+
+  /* ------------------------------------------------ fit block */
+  .fit-block {
+    font-family: var(--serif);
+    font-size: 22px;
+    line-height: 1.55;
+    max-width: 58ch;
+  }
+
+  .positioning {
+    margin-top: 26px;
+    font-size: 14px;
+    font-weight: 600;
+    letter-spacing: 0.05em;
+    color: var(--ink-faint);
+    text-transform: uppercase;
+  }
+
+  /* ------------------------------------------------ CTA */
+  .cta {
+    margin-top: 20px;
+    border-top: 1px solid var(--ink);
+    padding-top: 48px;
+    text-align: left;
+  }
+
+  .cta h2 { font-size: 34px; }
+
+  .cta p {
+    color: var(--ink-soft);
+    max-width: 50ch;
+    margin-bottom: 30px;
+  }
+
+  .cta a.button {
+    display: inline-block;
+    background: var(--brand-accent);
+    color: var(--paper);
+    font-family: var(--sans);
+    font-size: 15px;
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    text-decoration: none;
+    padding: 16px 34px;
+    transition: transform 120ms ease, box-shadow 120ms ease;
+  }
+
+  .cta a.button:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 18px rgba(20, 20, 20, 0.18);
+  }
+
+  footer {
+    margin-top: 64px;
+    padding-top: 22px;
+    border-top: 1px solid var(--rule);
+    font-size: 13px;
+    color: var(--ink-faint);
+    display: flex;
+    justify-content: space-between;
+    gap: 16px;
+    flex-wrap: wrap;
+  }
+
+  @media (max-width: 560px) {
+    .page { padding-top: 48px; }
+    .fu-step { grid-template-columns: 40px 1fr; }
+    .fu-metrics { gap: 20px 28px; }
+    .fu-metric-value { font-size: 26px; }
+  }
+
+  @media print {
+    body { background: #fff; }
+    .cta a.button { color: #fff; }
+  }
+</style>
+</head>
+<body>
+<div class="page">
+
+  <header class="masthead">
+    <div class="kicker">Private follow-up</div>
+    <div data-slot="logo"><img class="logo" src="[LOGO_URL]" alt="[Company] logo"></div>
+    <h1>[Company] — <em>read, mapped, and a plan to move.</em></h1>
+    <p class="standfirst">Not a pitch deck. A working read of where you are, what I would run first, and the numbers behind the same plays elsewhere.</p>
+  </header>
+
+  <section>
+    <div class="sec-head"><span class="sec-num">01</span><span class="sec-label">Where you are</span><span class="sec-rule"></span></div>
+    [DIAGNOSIS_ITEMS]
+  </section>
+
+  <section>
+    <div class="sec-head"><span class="sec-num">02</span><span class="sec-label">Reading the business</span><span class="sec-rule"></span></div>
+    [READING_PARAS]
+  </section>
+
+  <section>
+    <div class="sec-head"><span class="sec-num">03</span><span class="sec-label">Where I fit</span><span class="sec-rule"></span></div>
+    <p class="fit-block">[FIT]</p>
+    <p class="positioning">[POSITIONING]</p>
+  </section>
+
+  <section>
+    <div class="sec-head"><span class="sec-num">04</span><span class="sec-label">The playbook</span><span class="sec-rule"></span></div>
+    [PLAYBOOK_ITEMS]
+    <div style="height: 34px"></div>
+    [PLAY_ITEMS]
+  </section>
+
+  <section>
+    <div class="sec-head"><span class="sec-num">05</span><span class="sec-label">Proof</span><span class="sec-rule"></span></div>
+    [CASE_ITEMS]
+  </section>
+
+  <section>
+    <div class="sec-head"><span class="sec-num">06</span><span class="sec-label">Infrastructure you get access to</span><span class="sec-rule"></span></div>
+    [PLATFORM_ITEMS]
+  </section>
+
+  <section>
+    <div class="sec-head"><span class="sec-num">07</span><span class="sec-label">First 30 days</span><span class="sec-rule"></span></div>
+    [PLAN_ITEMS]
+  </section>
+
+  <section class="cta">
+    <div class="sec-head"><span class="sec-num">08</span><span class="sec-label">Next step</span><span class="sec-rule"></span></div>
+    <h2>A working session, not a pitch.</h2>
+    <p>Thirty minutes. Bring one live problem from the list above and we will map the play against it on the call.</p>
+    <a class="button" href="[CAL_URL]">Book a 30-minute call</a>
+  </section>
+
+  <footer>
+    <span>[LOCATION_LINE]</span>
+    <span>Prepared for [Company]</span>
+  </footer>
+
+</div>
+</body>
+</html>

@@ -5,7 +5,13 @@
 import type { LeadRow } from "../db.js";
 import { followupNarrativeSchema, type FollowupNarrative } from "./aiSchemas.js";
 import type { ProofLibrary } from "./proofLibrary.js";
-import type { RenderGateResult } from "./microsite.js";
+import {
+  escapeHtml,
+  pickReadableAccent,
+  pickThemedLogoUrl,
+  removeSlot,
+  type RenderGateResult,
+} from "./microsite.js";
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null;
@@ -87,4 +93,126 @@ export function buildFollowupSkim(lead: LeadRow, library: ProofLibrary): string 
     ``,
   ];
   return lines.join("\n");
+}
+
+// ---------------------------------------------------------------------
+// Page builder. The template owns layout and styling; this emits only the
+// fixed .fu-* markup shapes for repeating content, always escaped. Library
+// metric strings are inserted verbatim (escaped, never reworded).
+// ---------------------------------------------------------------------
+
+const e = escapeHtml;
+
+function pad2(n: number): string {
+  return String(n).padStart(2, "0");
+}
+
+function metricsHtml(metrics: { value: string; label: string }[]): string {
+  if (metrics.length === 0) return "";
+  const items = metrics
+    .map(
+      (m) =>
+        `<div class="fu-metric"><span class="fu-metric-value">${e(m.value)}</span><span class="fu-metric-label">${e(m.label)}</span></div>`
+    )
+    .join("");
+  return `<div class="fu-metrics">${items}</div>`;
+}
+
+export function buildFollowupHtml(lead: LeadRow, library: ProofLibrary, templateHtml: string): string {
+  const n = readNarrative(lead);
+  if (!n) throw new Error("buildFollowupHtml: followup_narrative does not validate");
+  const company = readCompanyName(lead);
+
+  const brandColors = isRecord(lead.brand_colors) ? lead.brand_colors : {};
+  const primary = typeof brandColors.primary === "string" ? brandColors.primary : "";
+  const secondary = typeof brandColors.secondary === "string" ? brandColors.secondary : "";
+  const accent = pickReadableAccent(primary, secondary);
+  const logoUrl = pickThemedLogoUrl(isRecord(lead.logo) ? lead.logo : {}, null);
+
+  const caseById = new Map(library.caseStudies.map((c) => [c.id, c]));
+  const playById = new Map(library.plays.map((p) => [p.id, p]));
+
+  const diagnosisItems = n.diagnosis
+    .map(
+      (d) =>
+        `<div class="fu-item"><h3 class="fu-item-title">${e(d.title)}</h3><p class="fu-item-body">${e(d.body)}</p></div>`
+    )
+    .join("\n");
+
+  const readingParas = n.businessReading.map((p) => `<p class="fu-para">${e(p)}</p>`).join("\n");
+
+  const playbookItems = n.playbook
+    .map(
+      (p, i) =>
+        `<div class="fu-step"><span class="fu-step-num">${pad2(i + 1)}</span><div><h3 class="fu-item-title">${e(p.title)}</h3><p class="fu-item-body">${e(p.body)}</p></div></div>`
+    )
+    .join("\n");
+
+  const caseItems = n.caseStudyPicks
+    .map((pick) => {
+      const c = caseById.get(pick.id);
+      if (!c) return "";
+      return [
+        `<div class="fu-case">`,
+        `<h3 class="fu-case-client">${e(c.client)}</h3>`,
+        `<p class="fu-relevance">${e(pick.relevance)}</p>`,
+        `<p class="fu-item-body"><strong>Problem.</strong> ${e(c.problem)}</p>`,
+        `<p class="fu-item-body"><strong>What was done.</strong> ${e(c.approach)}</p>`,
+        metricsHtml(c.metrics),
+        `</div>`,
+      ].join("");
+    })
+    .join("\n");
+
+  const playItems = n.playPicks
+    .map((pick) => {
+      const p = playById.get(pick.id);
+      if (!p) return "";
+      const steps = p.steps.map((s) => `<li>${e(s)}</li>`).join("");
+      return `<div class="fu-item"><h3 class="fu-item-title">${e(p.name)}</h3><p class="fu-relevance">${e(pick.relevance)}</p><ul class="fu-list">${steps}</ul></div>`;
+    })
+    .join("\n");
+
+  const platformItems = library.platforms
+    .map((p) => {
+      const name = p.link ? `<a href="${e(p.link)}">${e(p.name)}</a>` : e(p.name);
+      return `<div class="fu-item"><h3 class="fu-item-title">${name}</h3><p class="fu-item-body">${e(p.description)}</p>${metricsHtml(p.metrics)}</div>`;
+    })
+    .join("\n");
+
+  const planItems = library.plan30day
+    .map((phase, i) => {
+      const items = phase.deliverables.map((d) => `<li>${e(d)}</li>`).join("");
+      return `<div class="fu-step"><span class="fu-step-num">${pad2(i + 1)}</span><div><h3 class="fu-item-title">${e(phase.title)}</h3><ul class="fu-list">${items}</ul></div></div>`;
+    })
+    .join("\n");
+
+  let html = templateHtml;
+  if (!logoUrl) html = removeSlot(html, "logo");
+
+  const replacements: Array<[string, string]> = [
+    ["[LOGO_URL]", e(logoUrl)],
+    ["[Company]", e(company)],
+    ["[POSITIONING]", e(library.profile.positioning)],
+    ["[LOCATION_LINE]", e(library.profile.locationLine)],
+    ["[CAL_URL]", e(library.profile.calUrl)],
+    ["[FIT]", e(n.fit)],
+    ["[DIAGNOSIS_ITEMS]", diagnosisItems],
+    ["[READING_PARAS]", readingParas],
+    ["[PLAYBOOK_ITEMS]", playbookItems],
+    ["[CASE_ITEMS]", caseItems],
+    ["[PLAY_ITEMS]", playItems],
+    ["[PLATFORM_ITEMS]", platformItems],
+    ["[PLAN_ITEMS]", planItems],
+  ];
+  for (const [token, value] of replacements) {
+    html = html.split(token).join(value);
+  }
+
+  if (accent) {
+    const style = `<style>:root{--brand-accent: ${accent};}</style>`;
+    html = /<\/body>/i.test(html) ? html.replace(/<\/body>/i, `${style}</body>`) : html + style;
+  }
+
+  return html;
 }

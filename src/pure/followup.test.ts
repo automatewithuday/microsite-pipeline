@@ -1,7 +1,8 @@
 import { describe, expect, it } from "vitest";
 import type { LeadRow } from "../db.js";
 import type { ProofLibrary } from "./proofLibrary.js";
-import { buildFollowupSkim, followupRenderGate, followupSlug, readNarrative } from "./followup.js";
+import { readFileSync } from "node:fs";
+import { buildFollowupHtml, buildFollowupSkim, followupRenderGate, followupSlug, readNarrative } from "./followup.js";
 
 const narrative = {
   diagnosis: [
@@ -113,5 +114,61 @@ describe("readNarrative", () => {
   });
   it("returns the validated narrative", () => {
     expect(readNarrative(makeLead())?.fit).toBe("Operator layer.");
+  });
+});
+
+const templateHtml = readFileSync(new URL("../../templates/followup/index.html", import.meta.url), "utf8");
+
+describe("buildFollowupHtml", () => {
+  it("leaves no unreplaced tokens", () => {
+    const html = buildFollowupHtml(makeLead(), library, templateHtml);
+    expect(html).not.toMatch(
+      /\[(Company|LOGO_URL|POSITIONING|LOCATION_LINE|CAL_URL|FIT|DIAGNOSIS_ITEMS|READING_PARAS|PLAYBOOK_ITEMS|CASE_ITEMS|PLAY_ITEMS|PLATFORM_ITEMS|PLAN_ITEMS)\]/
+    );
+  });
+
+  it("renders picked case studies in pick order with verbatim metrics", () => {
+    const html = buildFollowupHtml(makeLead(), library, templateHtml);
+    expect(html).toContain("DailyPay");
+    expect(html).toContain("2,700+");
+    expect(html).toContain("Demos booked");
+    expect(html.indexOf("DailyPay")).toBeLessThan(html.indexOf("SK Trading"));
+  });
+
+  it("escapes HTML in narrative values", () => {
+    const evil = {
+      ...narrative,
+      fit: `<script>alert("x")</script>`,
+    };
+    const html = buildFollowupHtml(makeLead({ followup_narrative: { ...evil, raw: "r" } }), library, templateHtml);
+    expect(html).not.toContain(`<script>alert`);
+    expect(html).toContain("&lt;script&gt;");
+  });
+
+  it("never renders groundedIn on the page", () => {
+    const html = buildFollowupHtml(makeLead(), library, templateHtml);
+    expect(html).not.toContain("ads: 0 LinkedIn ads");
+  });
+
+  it("drops the logo slot when no logo exists", () => {
+    const html = buildFollowupHtml(makeLead(), library, templateHtml);
+    expect(html).not.toContain("[LOGO_URL]");
+    expect(html).not.toContain('data-slot="logo"');
+  });
+
+  it("keeps the logo and injects brand accent when present and readable", () => {
+    const lead = makeLead({
+      logo: { url: "https://cdn.example.com/logo.png" },
+      brand_colors: { primary: "#0B4F6C", secondary: "#cccccc" },
+    });
+    const html = buildFollowupHtml(lead, library, templateHtml);
+    expect(html).toContain("https://cdn.example.com/logo.png");
+    expect(html).toContain("--brand-accent: #0B4F6C");
+  });
+
+  it("includes the Cal.com CTA and 30-day plan", () => {
+    const html = buildFollowupHtml(makeLead(), library, templateHtml);
+    expect(html).toContain("https://cal.com/uday-kang/15min");
+    expect(html).toContain("Audit");
   });
 });
