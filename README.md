@@ -97,6 +97,18 @@ Want to see the shape before running anything? [`templates/microsite/index.html`
 
 Two deck designs ship: `microsite` (default, the DCN system) and [`microsite-signal`](templates/microsite-signal/index.html). A render picks one via the lead's `template` field, then the `DECK_TEMPLATE` env var, then falls back to `microsite`. Set a lead's variant with the optional `template` column in `leads.csv` (validated at seed time) — an empty cell preserves whatever's already assigned; clearing an existing assignment via CSV isn't supported yet. After editing a variant's `index.src.html` or fonts, rebuild with `npx tsx scripts/build-deck-template.ts [microsite|microsite-signal]` (omit the arg to rebuild both).
 
+### What it looks like
+
+Real pipeline output — the `microsite-signal` variant rendered for "Acme", a fictional example company (your lead's name, logo, and data take these slots):
+
+| Cover | Stack |
+|-------|-------|
+| ![Deck cover page](docs/screenshots/deck-cover.png) | ![Deck stack page](docs/screenshots/deck-stack.png) |
+
+| First thirty days | Close |
+|-------------------|-------|
+| ![Deck 30-day plan page](docs/screenshots/deck-plan.png) | ![Deck closing CTA page](docs/screenshots/deck-close.png) |
+
 ---
 
 ## The switch
@@ -203,6 +215,10 @@ around the proof content in `content/proof-library.yaml` (yours to edit —
 metrics render verbatim, the LLM only selects and frames). Drafts stay local;
 a page only goes live through an explicit `approve`, which deploys it to a
 prospect-named Netlify subdomain (needs `NETLIFY_AUTH_TOKEN` in `.env`).
+
+![Follow-up deck opening](docs/screenshots/followup-hero.png)
+
+<sub>The opening of a generated follow-up page (same fictional example company) — [see the full scroll](docs/screenshots/followup-full.jpg).</sub>
 
 ```bash
 # Review queue: drafts awaiting review, deployed, failed
