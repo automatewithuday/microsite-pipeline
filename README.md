@@ -95,6 +95,8 @@ Pages fill in from whatever your keys support. **Anything unsourced is dropped, 
 
 Want to see the shape before running anything? [`templates/microsite/index.html`](templates/microsite/index.html) is the raw template, and `npx tsx scripts/doctor.ts` prints exactly which steps will run or skip with your current `.env`.
 
+Two deck designs ship: `microsite` (default, the DCN system) and [`microsite-signal`](templates/microsite-signal/index.html). A render picks one via the lead's `template` field, then the `DECK_TEMPLATE` env var, then falls back to `microsite`. Set a lead's variant with the optional `template` column in `leads.csv` (validated at seed time) — an empty cell preserves whatever's already assigned; clearing an existing assignment via CSV isn't supported yet. After editing a variant's `index.src.html` or fonts, rebuild with `npx tsx scripts/build-deck-template.ts [microsite|microsite-signal]` (omit the arg to rebuild both).
+
 ---
 
 ## The switch
@@ -164,7 +166,7 @@ Note the traffic semantics differ per route: Apify's SimilarWeb actor reports **
 # One ad-hoc lead, no CSV (seeds + runs end to end)
 npx tsx scripts/run.ts --lead-url <linkedin> --name "<name>" --company <domain>
 
-# Seed many leads from leads.csv (header: url, first_name, last_name, company, position)
+# Seed many leads from leads.csv (header: url, first_name, last_name, company, position, template — template is optional)
 npx tsx scripts/seed.ts
 # ...then process pending rows
 npx tsx scripts/run.ts --batch 50
@@ -311,7 +313,8 @@ src/
   pure/               # deterministic, unit-tested helpers (no I/O)
   render.ts           # render pass: HTML → PDF → artifact
 prompts/              # LLM prompt templates
-templates/microsite/  # the HTML deck template (interpolated per lead)
+templates/microsite/         # default deck template (DCN), interpolated per lead
+templates/microsite-signal/  # Signal deck template variant
 scripts/              # setup (interactive), init, run, seed, doctor, serve
 ```
 

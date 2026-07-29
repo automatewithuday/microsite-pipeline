@@ -1,6 +1,6 @@
 // Reads leads.csv from the repo root and upserts rows into the `leads` table,
 // keyed on linkedin_url. Columns (case-insensitive): URL/url/linkedin_url,
-// first_name, last_name, company, position.
+// first_name, last_name, company, position, template (optional).
 
 import { existsSync, readFileSync } from "node:fs";
 import path from "node:path";
