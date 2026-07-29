@@ -1,5 +1,5 @@
 // Self-hosted renderer: orchestration + I/O. Reads the committed template,
-// calls the pure builder, renders an 8-page PDF with Playwright, persists the
+// calls the pure builder, renders a 9-page PDF with Playwright, persists the
 // artifacts via the state backend, and writes the rendered_html + render
 // columns. Idempotent "done" skip, gate skip, and errors caught to markStep
 // (a step error never crashes the batch).
@@ -10,6 +10,8 @@ import { chromium } from "playwright";
 import { RENDER_STRICT, getStepState, type LeadRow } from "./db.js";
 import type { StateBackend } from "./state/types.js";
 import { renderGate, buildMicrositeHtml } from "./pure/microsite.js";
+import { loadProofLibrary } from "./proofLibrary.js";
+import type { ProofLibrary } from "./pure/proofLibrary.js";
 
 const here = dirname(fileURLToPath(import.meta.url));
 const TEMPLATE_PATH = resolve(here, "../templates/microsite/index.html");
@@ -54,11 +56,19 @@ export async function applyRender(
   try {
     const templateHtml = await readFile(TEMPLATE_PATH, "utf8").catch(() => {
       throw new Error(
-        `microsite template missing at ${TEMPLATE_PATH}. Run scripts/extract-template.ts to regenerate it.`
+        `microsite template missing at ${TEMPLATE_PATH}. Run scripts/build-deck-template.ts to regenerate it.`
       );
     });
 
-    const html = buildMicrositeHtml(lead, templateHtml);
+    // Library failures degrade the deck (Work/Plan pages drop) instead of
+    // erroring the whole render step — the library is optional content.
+    let library: ProofLibrary | null = null;
+    try {
+      library = loadProofLibrary();
+    } catch {
+      library = null;
+    }
+    const html = buildMicrositeHtml(lead, templateHtml, library);
 
     // Write the artifacts FIRST, so we never persist rendered_html for a lead
     // whose PDF failed (which would make /d/<id> serve a page while

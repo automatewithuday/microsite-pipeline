@@ -6,13 +6,14 @@ import {
   renderGate,
   extractMicrositeData,
   escapeHtml,
-  pickReadableBrandBg,
   pickReadableAccent,
   removeSlot,
   buildMicrositeHtml,
   pickThemedLogoUrl,
+  pickDeckCaseStudies,
 } from "./microsite.js";
 import type { LeadRow } from "../db.js";
+import type { ProofLibrary } from "./proofLibrary.js";
 
 function baseLead(overrides: Partial<LeadRow> = {}): LeadRow {
   return {
@@ -190,27 +191,6 @@ describe("escapeHtml", () => {
   });
 });
 
-describe("pickReadableBrandBg", () => {
-  it("prefers primary when it passes 4.5:1 vs #111", () => {
-    expect(pickReadableBrandBg("#F5EFE6", "#FF4D00")).toBe("#F5EFE6");
-  });
-  it("falls back to secondary when primary fails", () => {
-    expect(pickReadableBrandBg("#111111", "#F5EFE6")).toBe("#F5EFE6");
-  });
-  it("returns null when both fail", () => {
-    expect(pickReadableBrandBg("#000000", "#222222")).toBeNull();
-  });
-  it("returns null for unparseable colors", () => {
-    expect(pickReadableBrandBg("not-a-color", "")).toBeNull();
-  });
-  it("accepts 3-digit hex", () => {
-    expect(pickReadableBrandBg("#fff", "#000")).toBe("#fff");
-  });
-  it("falls back to secondary when primary is unparseable", () => {
-    expect(pickReadableBrandBg("rgb(0,0,0)", "#ffffff")).toBe("#ffffff");
-  });
-});
-
 describe("removeSlot", () => {
   it("removes the whole tagged element including nested children", () => {
     const html = `<div data-slot="x"><span>a</span><span>b</span></div><p>keep</p>`;
@@ -229,6 +209,28 @@ describe("removeSlot", () => {
   });
 });
 
+// Proof-library fixture shared by buildMicrositeHtml's case/plan tests
+// (both the fake-template block and the real-committed-template block).
+const FULL_LIB: ProofLibrary = {
+  profile: { positioning: "p" },
+  caseStudies: [
+    { id: "dp", client: "DailyPay", verticalTags: ["fintech"], motionTags: ["outbound"],
+      problem: "Enterprise outbound at scale", approach: "Built the engine",
+      metrics: [{ value: "2,700+", label: "booked demos" }, { value: "9", label: "ignored" }] },
+    { id: "re", client: "Reactivation", verticalTags: ["saas"], motionTags: ["abm"],
+      problem: "Dead accounts", approach: "CTV + ABM replay",
+      metrics: [{ value: "$250K", label: "opportunity revenue" }] },
+  ],
+  plays: [{ id: "pl", name: "n", whenTags: ["w"], steps: ["s"] }],
+  platforms: [],
+  plan30day: [
+    { title: "Audit", deliverables: ["Full review.", "One document."] },
+    { title: "Architect", deliverables: ["SOPs."] },
+    { title: "Automate", deliverables: ["Workflows shipped."] },
+    { title: "Align", deliverables: ["Sequences live."] },
+  ],
+} as unknown as ProofLibrary;
+
 describe("buildMicrositeHtml", () => {
   const FAKE_TEMPLATE = `<!doctype html><html><head><style>
 :root{--brand-primary:var(--cream);--brand-secondary:var(--cream);}
@@ -244,7 +246,16 @@ describe("buildMicrositeHtml", () => {
 <section data-label="TAM">[Z] [Y] [X]</section>
 <section data-label="Signals">[Signal 1] [Signal 2] [Signal 3]</section>
 <section data-label="Integration">PLUGS INTO [CRM]</section>
-<section data-label="Proof">STATIC PROOF 2,700+ $250K</section>
+<section data-label="Work" data-slot="work">
+<article data-slot="case1">[Case Client 1] [Case Problem 1] [Case Approach 1] [Case Metric Value 1] [Case Metric Label 1]</article>
+<article data-slot="case2">[Case Client 2] [Case Problem 2] [Case Approach 2] [Case Metric Value 2] [Case Metric Label 2]</article>
+</section>
+<section data-label="Plan" data-slot="plan30">
+<div data-slot="plan-phase-1">P1 [Plan Title 1] [Plan Deliverables 1]</div>
+<div data-slot="plan-phase-2">P2 [Plan Title 2] [Plan Deliverables 2]</div>
+<div data-slot="plan-phase-3">P3 [Plan Title 3] [Plan Deliverables 3]</div>
+<div data-slot="plan-phase-4">P4 [Plan Title 4] [Plan Deliverables 4]</div>
+</section>
 <section data-label="CTA">[Company]</section>
 </body></html>`;
 
@@ -319,27 +330,107 @@ describe("buildMicrositeHtml", () => {
     expect(out).toContain("PLUGS INTO your CRM");
   });
 
-  it("injects brand primary on :root when it passes contrast", () => {
-    const out = buildMicrositeHtml(lead(), FAKE_TEMPLATE);
-    // #F5EFE6 IS the cream default, so no override is injected (would be a no-op).
-    expect(out).not.toContain("--brand-primary: #F5EFE6");
+  it("injects --brand-accent when a brand color is dark enough to read on white", () => {
+    // #0B4F6C contrasts ~8.9:1 vs white (well above the 4.5 AA floor).
+    const out = buildMicrositeHtml(
+      lead({ brand_colors: { primary: "#0B4F6C", secondary: "" } }),
+      FAKE_TEMPLATE
+    );
+    expect(out).toContain(":root{--brand-accent: #0B4F6C;}");
+    expect(out.indexOf("--brand-accent: #0B4F6C")).toBeGreaterThan(out.indexOf("<body>"));
   });
 
-  it("injects a non-cream readable primary override", () => {
-    const out = buildMicrositeHtml(lead({ brand_colors: { primary: "#FFFFFF", secondary: "#000000" } }), FAKE_TEMPLATE);
-    expect(out).toContain("--brand-primary: #FFFFFF");
-    expect(out).toContain("--brand-secondary: #FFFFFF");
+  it("keeps the default accent when both brand colors are too light (pink Signaliz case)", () => {
+    const out = buildMicrositeHtml(
+      lead({ brand_colors: { primary: "#F8C8DC", secondary: "#FFF0F5" } }),
+      FAKE_TEMPLATE
+    );
+    expect(out).not.toContain("--brand-accent:");
   });
 
-  it("injects nothing when both brand colors fail contrast", () => {
-    const out = buildMicrositeHtml(lead({ brand_colors: { primary: "#000000", secondary: "#111111" } }), FAKE_TEMPLATE);
-    expect(out).not.toContain("--brand-primary: #000000");
-    expect(out).not.toContain("--brand-primary: #111111");
+  it("never injects full-page brand background vars (regression: pink Signaliz cover)", () => {
+    const out = buildMicrositeHtml(
+      lead({ brand_colors: { primary: "#F8C8DC", secondary: "#0B7BFA" } }),
+      FAKE_TEMPLATE
+    );
+    expect(out).not.toContain("--brand-primary: #");
+    expect(out).not.toContain("--brand-secondary: #");
   });
 
-  it("never alters page 7 proof text", () => {
-    const out = buildMicrositeHtml(lead(), FAKE_TEMPLATE);
-    expect(out).toContain("STATIC PROOF 2,700+ $250K");
+  it("always uses the dark-theme logo variant (white pages)", () => {
+    const out = buildMicrositeHtml(
+      lead({
+        logo: { url: "https://l/base.png", url_dark_theme: "https://l/dark.png", url_light_theme: "https://l/light.png" },
+        brand_colors: { primary: "#0F1115", secondary: "" }, // dark brand color must NOT flip the logo
+      }),
+      FAKE_TEMPLATE
+    );
+    expect(out).toContain("https://l/dark.png");
+  });
+
+  it("never rewrites page-7 case metrics: proof-library values render verbatim", () => {
+    const out = buildMicrositeHtml(lead(), FAKE_TEMPLATE, FULL_LIB);
+    expect(out).toContain("2,700+");
+    expect(out).toContain("$250K");
+  });
+
+  it("fills case tokens from the library (first metric only, verbatim)", () => {
+    const out = buildMicrositeHtml(lead(), FAKE_TEMPLATE, FULL_LIB);
+    expect(out).toContain("DailyPay");
+    expect(out).toContain("2,700+");
+    expect(out).toContain("booked demos");
+    expect(out).not.toContain("ignored"); // only metrics[0] renders
+    expect(out).not.toMatch(/\[Case [A-Za-z ]+\]/);
+  });
+
+  it("fills plan tokens, joining deliverables with a space", () => {
+    const out = buildMicrositeHtml(lead(), FAKE_TEMPLATE, FULL_LIB);
+    expect(out).toContain("Audit");
+    expect(out).toContain("Full review. One document.");
+    expect(out).not.toMatch(/\[Plan [A-Za-z ]+\]/);
+  });
+
+  it("industry steers the case pick", () => {
+    const withIndustry = lead({ company_data: { merged: { name: "Acme Inc", industry: "SaaS" } } });
+    const out = buildMicrositeHtml(withIndustry, FAKE_TEMPLATE, FULL_LIB);
+    // saas-tagged "Reactivation" becomes case 1
+    expect(out.indexOf("Reactivation")).toBeLessThan(out.indexOf("DailyPay"));
+  });
+
+  it("removes the whole work section when library is null", () => {
+    const out = buildMicrositeHtml(lead(), FAKE_TEMPLATE, null);
+    expect(out).not.toContain('data-slot="work"');
+    expect(out).not.toContain("[Case Client 1]");
+    expect(out).not.toContain('data-slot="plan30"');
+    expect(out).not.toContain("[Plan Title 1]");
+    // The rest of the deck still renders.
+    expect(out).toContain("Acme Inc");
+  });
+
+  it("removes only case2 when the library has one case study", () => {
+    const oneCase = { ...FULL_LIB, caseStudies: [FULL_LIB.caseStudies[0]] } as ProofLibrary;
+    const out = buildMicrositeHtml(lead(), FAKE_TEMPLATE, oneCase);
+    expect(out).toContain("DailyPay");
+    expect(out).not.toContain('data-slot="case2"');
+    expect(out).not.toContain("[Case Client 2]");
+  });
+
+  it("removes unused plan phase slots when fewer than 4 phases", () => {
+    const twoPhases = { ...FULL_LIB, plan30day: FULL_LIB.plan30day.slice(0, 2) } as ProofLibrary;
+    const out = buildMicrositeHtml(lead(), FAKE_TEMPLATE, twoPhases);
+    expect(out).toContain("Architect");
+    expect(out).not.toContain("P3");
+    expect(out).not.toContain("P4");
+    expect(out).not.toContain("[Plan Title 3]");
+  });
+
+  it("escapes untrusted-looking library text in case tokens", () => {
+    const evil = { ...FULL_LIB, caseStudies: [
+      { ...FULL_LIB.caseStudies[0], problem: '<img onerror=x>' },
+      FULL_LIB.caseStudies[1],
+    ] } as ProofLibrary;
+    const out = buildMicrositeHtml(lead(), FAKE_TEMPLATE, evil);
+    expect(out).toContain("&lt;img onerror=x&gt;");
   });
 });
 
@@ -366,19 +457,25 @@ describe("buildMicrositeHtml against the real committed template", () => {
     } as unknown as LeadRow;
   }
 
-  it("leaves no [bracket] tokens in the real rendered output", () => {
-    const out = buildMicrositeHtml(realLead(), realTemplate);
+  it("leaves no [bracket] tokens in the real rendered output when the library is populated", () => {
+    const out = buildMicrositeHtml(realLead(), realTemplate, FULL_LIB);
     const leftover = out.match(/\[[A-Za-z0-9 ]+\]/g);
     expect(leftover).toBeNull();
   });
 
-  it("renders all three TAM funnel numbers (numeric adjustedTam/adjustedTam2)", () => {
+  it("leaves no [bracket] tokens in the real rendered output when the library is null (degradation)", () => {
+    const out = buildMicrositeHtml(realLead(), realTemplate, null);
+    const leftover = out.match(/\[[A-Za-z0-9 ]+\]/g);
+    expect(leftover).toBeNull();
+  });
+
+  it("renders all three Market funnel numbers (numeric adjustedTam/adjustedTam2)", () => {
     const l = realLead();
     (l.derived as Record<string, unknown>).adjustedTam = 1800000; // numeric, as computeDerived emits
     (l.derived as Record<string, unknown>).adjustedTam2 = 1200000;
     const out = buildMicrositeHtml(l, realTemplate);
-    // Grab the TAM section and confirm all three tiers carry a number.
-    const start = out.indexOf('data-label="TAM"');
+    // Grab the Market section and confirm all three tiers carry a number.
+    const start = out.indexOf('data-label="Market"');
     const tam = out.slice(start, out.indexOf("</section>", start));
     expect(tam).toContain("2,000,000"); // [Z]
     expect(tam).toContain("1,800,000"); // [Y]
@@ -391,19 +488,45 @@ describe("buildMicrositeHtml against the real committed template", () => {
     expect(out).not.toContain("<b>bold</b> signal one");
   });
 
-  it("keeps the page-7 proof block byte-identical to the template", () => {
+  it("removes the Work and Plan sections from the real template when no library is passed (degradation)", () => {
     const out = buildMicrositeHtml(realLead(), realTemplate);
-    const proofOf = (h: string) => {
-      const start = h.indexOf('data-label="Proof"');
+    expect(out).not.toContain('data-label="Work"');
+    expect(out).not.toContain('data-label="Plan"');
+  });
+
+  it("fills the Work and Plan sections of the real template verbatim when a library is passed", () => {
+    const out = buildMicrositeHtml(realLead(), realTemplate, FULL_LIB);
+    const sectionOf = (h: string, label: string) => {
+      const start = h.indexOf(`data-label="${label}"`);
       const end = h.indexOf("</section>", start) + "</section>".length;
       return h.slice(start, end);
     };
-    expect(proofOf(out)).toBe(proofOf(realTemplate));
+    expect(sectionOf(out, "Work")).toContain("DailyPay");
+    expect(sectionOf(out, "Work")).toContain("2,700+");
+    expect(sectionOf(out, "Plan")).toContain("Audit");
+    expect(sectionOf(out, "Plan")).toContain("Full review. One document.");
   });
 
-  it("injects a non-cream readable brand override into :root", () => {
+  it("injects a readable brand-accent override into :root", () => {
+    // realLead: primary #FFFFFF fails vs white, secondary #123456 passes.
     const out = buildMicrositeHtml(realLead(), realTemplate);
-    expect(out).toContain("--brand-primary: #FFFFFF");
+    expect(out).toContain("--brand-accent: #123456");
+    expect(out).not.toContain("--brand-primary:");
+  });
+
+  it("injects the brand-accent override before the real closing </body>, not into the template's own explanatory comment", () => {
+    // Regression guard: the real template's <style> block documents this
+    // injection point in a CSS comment that itself contains the literal
+    // text "</body>" ("...appended before </body> when AA-safe..."). A
+    // naive first-match .replace(/<\/body>/i, ...) lands the override
+    // inside that inert comment instead of before the real closing tag,
+    // silently disabling the accent feature for every real lead.
+    const out = buildMicrositeHtml(realLead(), realTemplate);
+    const overrideAt = out.indexOf("--brand-accent: #123456");
+    const lastBodyOpenAt = out.lastIndexOf("<body>");
+    const lastBodyCloseAt = out.lastIndexOf("</body>");
+    expect(overrideAt).toBeGreaterThan(lastBodyOpenAt);
+    expect(overrideAt).toBeLessThan(lastBodyCloseAt);
   });
 
   it("removes point1 block from the real template when paidSearchPct is null", () => {
@@ -416,16 +539,15 @@ describe("buildMicrositeHtml against the real committed template", () => {
 });
 
 describe("buildMicrositeHtml brand-color injection", () => {
-  // The real template keeps its <style> (with the cream defaults for
-  // --brand-primary/--brand-secondary) inside the BODY, not the head. At
-  // equal :root specificity the later rule wins, so the injected override
-  // must land after the template's own definition or the cream default
-  // silently wins (live-observed on the coldiq.com deck, 2026-07-28).
-  const BODY_STYLE_TEMPLATE = `<!doctype html><html><head></head><body>
-<helmet><style>
-:root{--cream:#F5EFE6;--brand-primary:var(--cream);--brand-secondary:var(--cream);}
-</style></helmet>
-<section data-label="Cover" style="background:var(--brand-primary)"><h1>[Company]</h1></section>
+  // The template defines its own --brand-accent default at :root (in the
+  // head). At equal :root specificity the later rule wins, so the injected
+  // override must land after the template's own definition -- appended at
+  // the very end of the document, right before </body> -- or the template
+  // default silently wins (live-observed on the coldiq.com deck, 2026-07-28).
+  const HEAD_STYLE_TEMPLATE = `<!doctype html><html><head><style>
+:root{--brand-accent:#FF5A2C;}
+</style></head><body>
+<section data-label="Cover"><h1 style="color:var(--brand-accent)">[Company]</h1></section>
 </body></html>`;
 
   function brandLead() {
@@ -435,16 +557,17 @@ describe("buildMicrositeHtml brand-color injection", () => {
       icp_segments: { segments: [] },
       sales_signals: { signals: [] },
       logo: { url: "" },
-      brand_colors: { primary: "#0B7BFA", secondary: "#F9962E" },
+      // #0B4F6C contrasts ~8.9:1 vs white (well above the 4.5 AA floor).
+      brand_colors: { primary: "#0B4F6C", secondary: "#F9962E" },
       company_data: { merged: { name: "ColdIQ" } },
       derived: {},
     } as unknown as LeadRow;
   }
 
-  it("injects the brand override AFTER the template's own :root definition", () => {
-    const out = buildMicrositeHtml(brandLead(), BODY_STYLE_TEMPLATE);
-    const overrideAt = out.lastIndexOf("--brand-primary: #0B7BFA");
-    const templateDefaultAt = out.indexOf("--brand-primary:var(--cream)");
+  it("injects the brand-accent override AFTER the template's own :root definition", () => {
+    const out = buildMicrositeHtml(brandLead(), HEAD_STYLE_TEMPLATE);
+    const overrideAt = out.lastIndexOf("--brand-accent: #0B4F6C");
+    const templateDefaultAt = out.indexOf("--brand-accent:#FF5A2C");
     expect(overrideAt).toBeGreaterThan(-1);
     expect(templateDefaultAt).toBeGreaterThan(-1);
     expect(overrideAt).toBeGreaterThan(templateDefaultAt);
@@ -486,7 +609,7 @@ describe("pickThemedLogoUrl", () => {
 });
 
 describe("buildMicrositeHtml themed logo integration", () => {
-  it("uses the light-theme logo url when the injected brand bg is dark", () => {
+  it("always uses the dark-theme logo url, even when the brand color is dark (deck pages are always white)", () => {
     const template = `<!doctype html><html><head></head><body>
 <section data-label="Cover"><div data-slot="logo"><img src="[LOGO_URL]"></div><h1>[Company]</h1></section>
 </body></html>`;
@@ -506,8 +629,8 @@ describe("buildMicrositeHtml themed logo integration", () => {
     } as unknown as LeadRow;
 
     const out = buildMicrositeHtml(lead, template);
-    expect(out).toContain('src="https://cdn.bf/light-logo.svg"');
-    expect(out).not.toContain('src="https://cdn.bf/dark-logo.svg"');
+    expect(out).toContain('src="https://cdn.bf/dark-logo.svg"');
+    expect(out).not.toContain('src="https://cdn.bf/light-logo.svg"');
   });
 });
 
@@ -520,5 +643,61 @@ describe("pickReadableAccent", () => {
   });
   it("returns null when neither is dark enough (or unparseable)", () => {
     expect(pickReadableAccent("#ffffff", "not-a-color")).toBeNull();
+  });
+});
+
+// Fixture helper for pickDeckCaseStudies tests
+function lib(cases: Array<Partial<ProofLibrary["caseStudies"][number]> & { id: string }>): ProofLibrary {
+  return {
+    profile: { positioning: "p", locationLine: "l", calUrl: "https://example.com", repoLinks: [] },
+    caseStudies: cases.map((c) => ({
+      client: c.id, verticalTags: ["saas"], motionTags: ["outbound"],
+      problem: "prob", approach: "appr", metrics: [{ value: "1x", label: "l" }],
+      ...c,
+    })),
+    plays: [{ id: "pl", name: "n", whenTags: ["w"], steps: ["s"] }],
+    platforms: [],
+    plan30day: [{ title: "Audit", deliverables: ["d"] }],
+  } as ProofLibrary;
+}
+
+describe("pickDeckCaseStudies", () => {
+  it("returns the first two in curated order when industry is null", () => {
+    const out = pickDeckCaseStudies(lib([{ id: "a" }, { id: "b" }, { id: "c" }]), null);
+    expect(out.map((c) => c.id)).toEqual(["a", "b"]);
+  });
+
+  it("puts industry-matched case studies first, curated order preserved", () => {
+    const out = pickDeckCaseStudies(
+      lib([{ id: "a" }, { id: "b", verticalTags: ["fintech"] }, { id: "c", verticalTags: ["fintech"] }]),
+      "Fintech"
+    );
+    expect(out.map((c) => c.id)).toEqual(["b", "c"]);
+  });
+
+  it("matches case-insensitively and by substring in either direction", () => {
+    const out = pickDeckCaseStudies(
+      lib([{ id: "a" }, { id: "b", verticalTags: ["Financial Services"] }]),
+      "financial"
+    );
+    expect(out.map((c) => c.id)).toEqual(["b", "a"]);
+  });
+
+  it("fills from curated order when only one matches", () => {
+    const out = pickDeckCaseStudies(
+      lib([{ id: "a" }, { id: "b" }, { id: "c", verticalTags: ["fintech"] }]),
+      "fintech"
+    );
+    expect(out.map((c) => c.id)).toEqual(["c", "a"]);
+  });
+
+  it("returns a single case study when the library has only one", () => {
+    const out = pickDeckCaseStudies(lib([{ id: "a" }]), "fintech");
+    expect(out.map((c) => c.id)).toEqual(["a"]);
+  });
+
+  it("ignores empty/whitespace industry", () => {
+    const out = pickDeckCaseStudies(lib([{ id: "a" }, { id: "b", verticalTags: ["  "] }]), "  ");
+    expect(out.map((c) => c.id)).toEqual(["a", "b"]);
   });
 });

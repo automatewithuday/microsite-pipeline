@@ -1,8 +1,20 @@
 // Self-hosted renderer: pure template builder. Interpolation,
-// HTML escaping, WCAG contrast math, brand-color selection, and optional
-// [Point 1]/[Point 2] block removal against the committed Claude Design
-// template. No I/O. 100% unit-covered.
+// HTML escaping, WCAG contrast math, and optional [Point 1]/[Point 2] block
+// removal against the committed Claude Design template. No I/O. 100%
+// unit-covered.
+//
+// Brand color is accent-only: the deck's pages are always white/paper.
+// pickReadableAccent() may tint small accent details (--brand-accent) with
+// the prospect's brand color, and only when it reads on white (AA >= 4.5);
+// otherwise the template's own default accent stays. There is no code path
+// that turns a brand color into a full-page background (--brand-primary/
+// --brand-secondary are never written) -- a light brand color (e.g. pale
+// pink) can no longer wash out an entire page (the "pink Signaliz" failure).
+// The logo is always resolved for a white background (pickThemedLogoUrl with
+// bgHex=null), independent of brand color, since the page background never
+// changes.
 import type { LeadRow } from "../db.js";
+import type { ProofLibrary } from "./proofLibrary.js";
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null;
@@ -201,27 +213,9 @@ function relativeLuminance([r, g, b]: [number, number, number]): number {
   return 0.2126 * lin(r) + 0.7152 * lin(g) + 0.0722 * lin(b);
 }
 
-// Contrast ratio of a color vs the deck's #111111 body text.
-const TEXT_LUM = relativeLuminance([0x11, 0x11, 0x11]);
-function contrastVsText(hex: string): number | null {
-  const rgb = parseHex(hex);
-  if (!rgb) return null;
-  const l = relativeLuminance(rgb);
-  const [hi, lo] = l > TEXT_LUM ? [l, TEXT_LUM] : [TEXT_LUM, l];
-  return (hi + 0.05) / (lo + 0.05);
-}
-
-export function pickReadableBrandBg(primary: string, secondary: string): string | null {
-  const pc = contrastVsText(primary);
-  if (pc !== null && pc >= 4.5) return primary;
-  const sc = contrastVsText(secondary);
-  if (sc !== null && sc >= 4.5) return secondary;
-  return null;
-}
-
-// Accent selection for pages with a LIGHT background: the inverse of
-// pickReadableBrandBg. Returns the first brand color dark enough to be read
-// ON white (contrast >= 4.5 vs #FFFFFF), or null (caller keeps the ink default).
+// Accent selection for the deck's LIGHT pages. Returns the first brand color
+// dark enough to be read ON white (contrast >= 4.5 vs #FFFFFF), or null
+// (caller keeps the template's default accent).
 const WHITE_LUM = 1.0;
 function contrastVsWhite(hex: string): number | null {
   const rgb = parseHex(hex);
@@ -263,6 +257,28 @@ export function pickThemedLogoUrl(logo: Record<string, unknown>, bgHex: string |
   const bgIsDark = rgb !== null && relativeLuminance(rgb) < DARK_BG_LUMINANCE;
   const preferred = bgIsDark ? lightTheme : darkTheme;
   return preferred ?? darkTheme ?? lightTheme ?? base;
+}
+
+// ---------------------------------------------------------------------
+// Deck case-study pick. Deterministic, no AI: case studies whose
+// verticalTags match the lead's industry come first (curated order
+// preserved within each group), the rest fill from curated order.
+// ---------------------------------------------------------------------
+
+export function pickDeckCaseStudies(
+  lib: ProofLibrary,
+  industry: string | null
+): ProofLibrary["caseStudies"] {
+  const ind = (industry ?? "").trim().toLowerCase();
+  const matches = (c: ProofLibrary["caseStudies"][number]): boolean =>
+    ind !== "" &&
+    c.verticalTags.some((t) => {
+      const tag = t.trim().toLowerCase();
+      return tag !== "" && (tag.includes(ind) || ind.includes(tag));
+    });
+  const matched = lib.caseStudies.filter(matches);
+  const rest = lib.caseStudies.filter((c) => !matches(c));
+  return [...matched, ...rest].slice(0, 2);
 }
 
 // ---------------------------------------------------------------------
@@ -313,17 +329,17 @@ export function removeSlot(html: string, slot: string): string {
 // brand injection. Returns a single self-contained HTML string.
 // ---------------------------------------------------------------------
 
-const CREAM_DEFAULT = "#F5EFE6";
-
-export function buildMicrositeHtml(lead: LeadRow, templateHtml: string): string {
+export function buildMicrositeHtml(
+  lead: LeadRow,
+  templateHtml: string,
+  library: ProofLibrary | null = null
+): string {
   const d = extractMicrositeData(lead);
   let html = templateHtml;
 
-  // The brand bg is computed up front: the logo variant depends on the
-  // background it will sit on (the style injection itself happens last).
-  const bg = pickReadableBrandBg(d.brandPrimary, d.brandSecondary);
-  const effectiveBg = bg && bg.toUpperCase() !== CREAM_DEFAULT ? bg : null;
-  const logoUrl = pickThemedLogoUrl(isRecord(lead.logo) ? lead.logo : {}, effectiveBg);
+  // The deck's pages are always white/paper, so the logo is always resolved
+  // for a light background regardless of the prospect's brand color.
+  const logoUrl = pickThemedLogoUrl(isRecord(lead.logo) ? lead.logo : {}, null);
 
   // 1. Optional-block removal FIRST (before token replacement), so a removed
   //    block never leaves a dangling escaped value. An absent logo drops the
@@ -332,6 +348,32 @@ export function buildMicrositeHtml(lead: LeadRow, templateHtml: string): string 
   if (d.point1 === null) html = removeSlot(html, "point1");
   if (d.point2 === null) html = removeSlot(html, "point2");
   if (logoUrl === "") html = removeSlot(html, "logo");
+
+  // 1b. Library-driven pages. Industry steers the case pick; a missing or
+  //     empty library drops the Work and Plan pages entirely (removeSlot),
+  //     so the deck degrades instead of rendering dangling [tokens].
+  const companyData = lead.company_data as { merged?: { industry?: unknown } } | null | undefined;
+  const mergedForIndustry = isRecord(companyData?.merged) ? companyData.merged : undefined;
+  const industry =
+    typeof mergedForIndustry?.industry === "string" && mergedForIndustry.industry.length > 0
+      ? mergedForIndustry.industry
+      : null;
+
+  const cases = library && library.caseStudies.length > 0 ? pickDeckCaseStudies(library, industry) : [];
+  if (cases.length === 0) {
+    html = removeSlot(html, "work");
+  } else if (cases.length === 1) {
+    html = removeSlot(html, "case2");
+  }
+
+  const phases = library ? library.plan30day.slice(0, 4) : [];
+  if (phases.length === 0) {
+    html = removeSlot(html, "plan30");
+  } else {
+    for (let i = phases.length; i < 4; i++) {
+      html = removeSlot(html, `plan-phase-${i + 1}`);
+    }
+  }
 
   // 2. Token replacements. Longest-prefix tokens first so e.g.
   //    "[Company Characteristic 1]" is replaced before "[Company]".
@@ -361,21 +403,41 @@ export function buildMicrositeHtml(lead: LeadRow, templateHtml: string): string 
     ["[Signal 3]", e(d.signals[2])],
     ["[CRM]", e(d.crmPlatform)],
   ];
+
+  for (const [i, c] of cases.entries()) {
+    const n = i + 1;
+    const metric = c.metrics[0];
+    replacements.push(
+      [`[Case Client ${n}]`, e(c.client)],
+      [`[Case Problem ${n}]`, e(c.problem)],
+      [`[Case Approach ${n}]`, e(c.approach)],
+      [`[Case Metric Value ${n}]`, e(metric?.value ?? "")],
+      [`[Case Metric Label ${n}]`, e(metric?.label ?? "")]
+    );
+  }
+  for (const [i, p] of phases.entries()) {
+    const n = i + 1;
+    replacements.push([`[Plan Title ${n}]`, e(p.title)], [`[Plan Deliverables ${n}]`, e(p.deliverables.join(" "))]);
+  }
+
   for (const [token, value] of replacements) {
     html = html.split(token).join(value);
   }
 
-  // 3. Brand-color injection on pages 1/3/5 only, if a color passes contrast.
-  //    Pages here use <section data-label="Cover|ICP|Signals">, which already
-  //    reference var(--brand-primary)/var(--brand-secondary); overriding the
-  //    :root vars recolors exactly those three pages (2/4/6/7/8 never use them
-  //    as a full-page background, so the default cream stays).
-  //    The template's own <style> (cream defaults for the brand vars) lives in
-  //    the BODY, and at equal :root specificity the later rule wins -- so the
-  //    override must be appended at the end of the document, never the head.
-  if (effectiveBg) {
-    const style = `<style>:root{--brand-primary: ${effectiveBg};--brand-secondary: ${effectiveBg};}</style>`;
-    html = /<\/body>/i.test(html) ? html.replace(/<\/body>/i, `${style}</body>`) : html + style;
+  // 3. Brand accent injection. The deck's pages are always white/paper; the
+  //    prospect's brand color may only tint small accents (--brand-accent),
+  //    and only when it reads on white (AA >= 4.5). Appended at the end of
+  //    the document so it wins the template's :root default.
+  const accent = pickReadableAccent(d.brandPrimary, d.brandSecondary);
+  if (accent) {
+    const style = `<style>:root{--brand-accent: ${accent};}</style>`;
+    // Insert before the LAST "</body>" (the real closing tag), not the first
+    // match: the template's own <style> block documents this injection point
+    // in a CSS comment containing the literal text "</body>", and a naive
+    // first-match .replace() lands the override inside that inert comment,
+    // silently disabling the entire per-lead accent feature.
+    const bodyCloseIdx = html.toLowerCase().lastIndexOf("</body>");
+    html = bodyCloseIdx === -1 ? html + style : html.slice(0, bodyCloseIdx) + style + html.slice(bodyCloseIdx);
   }
 
   return html;
