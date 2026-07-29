@@ -1,7 +1,14 @@
-# Single source of truth for Uday's proof content. Hand-edited only.
+# Single source of truth for YOUR proof content. Hand-edited only.
 # Metrics are VERBATIM strings — the pipeline selects and frames entries but
-# never rewrites a number. Lines marked "VERIFY" rendered as animated-counter
-# zeros during extraction and need Uday's real values.
+# never rewrites a number.
+#
+# How to populate: gather your case studies as PDFs or website case-study
+# pages and copy each metric from that source (with Claude Code: hand it the
+# PDF or URL and ask it to extract entries here — verbatim, never invented).
+# A metric that can't be read reliably gets a "# VERIFY:" comment naming
+# what's missing, not a guessed number. Resolve every VERIFY marker against
+# the original document before sending anything real. Each case study needs
+# at least one metric (the schema rejects an empty metrics list).
 
 profile:
   positioning: "Fractional CMO. Strategy & architecture — the operator layer underneath the team you're building."

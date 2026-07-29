@@ -17,7 +17,9 @@ const caseStudySchema = z.object({
   motionTags: z.array(z.string().min(1)).min(1),
   problem: z.string().min(1),
   approach: z.string().min(1),
-  metrics: z.array(metricSchema),
+  // A case study with no metric renders an empty proof block — require one.
+  // Platforms may ship with metrics: [] (the template hides the block there).
+  metrics: z.array(metricSchema).min(1),
   link: z.string().url().optional(),
 });
 

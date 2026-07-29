@@ -460,7 +460,14 @@ async function main(): Promise<void> {
         'npx tsx scripts/run.ts --lead-url <linkedin> --name "<name>" --company <domain>'
       )}`
     );
-    console.log(`  3. View it:                ${c.cyan("npx tsx scripts/serve.ts")}\n`);
+    console.log(`  3. View it:                ${c.cyan("npx tsx scripts/serve.ts")}`);
+    console.log(
+      `  4. Before sending follow-up decks: put ${c.bold("your")} case studies in ` +
+        `${c.cyan("content/proof-library.yaml")}.\n` +
+        `     Source them from your own PDFs or website case-study pages so every metric\n` +
+        `     is real — with Claude Code, hand it the PDF or URL and ask it to extract\n` +
+        `     them (metrics are copied verbatim, never invented). See SETUP.md.\n`
+    );
   } finally {
     rl.close();
   }

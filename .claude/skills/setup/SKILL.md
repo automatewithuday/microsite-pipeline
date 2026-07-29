@@ -62,6 +62,23 @@ npx tsx scripts/serve.ts
 - **`RESULT: FAIL. Missing required var(s): ...`** — the named variable must be set for the chosen switches. Re-run the wizard or edit `.env`.
 - **`Render: the core AI steps ... can't all run`** — no deck will be produced. Almost always a missing or invalid `ANTHROPIC_API_KEY`.
 
+## Populating the proof library (before follow-up decks)
+
+`content/proof-library.yaml` holds the user's case studies, and its metrics
+render verbatim on follow-up pages. Before the user sends a follow-up deck:
+
+1. **Ask the user for sources** — case-study PDFs (upload or drop into the
+   repo) or the case-study pages on their website. Never populate the library
+   from your own knowledge or the seeded examples.
+2. **Extract entries from those sources only.** Copy every metric verbatim —
+   never round, rephrase, or invent a number.
+3. **When a metric can't be read reliably** (e.g. it renders as an animated
+   counter or an image), write a `# VERIFY:` comment naming what's missing
+   instead of guessing, then ask the user for the real value.
+4. A case study needs at least one metric — the schema rejects an empty
+   `metrics:` list. Confirm with `npx tsx scripts/followup.ts list` /
+   `preview` that drafts pick up the new entries.
+
 ## Rules
 
 - **Never print, echo, or paste a key value.** Report `SET` / `EMPTY`, which is what `doctor.ts` does. This applies to reading `.env` too — don't cat it.

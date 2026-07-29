@@ -209,9 +209,17 @@ Three things to know before your first send:
 1. **`content/proof-library.yaml` is yours.** It is the single source of truth
    for your case studies, plays, platforms, and 30-day plan. Metrics render
    verbatim on the page — the LLM only selects and frames entries, never
-   rewrites a number. The seeded file contains `# VERIFY:` markers where a
-   metric could not be extracted reliably; resolve those before sending
-   anything real.
+   rewrites a number.
+
+   **Source it from your real material.** Gather your case studies as PDFs
+   (a sales deck, a one-pager) or point at the case-study pages on your
+   website, and copy each metric from that source. With Claude Code, drop
+   the PDF in the repo or share the URL and ask it to extract the entries
+   into the YAML — it must copy metrics verbatim, and anything it cannot
+   read reliably gets a `# VERIFY:` comment instead of a guessed number.
+   Resolve every `# VERIFY:` marker against the original document before
+   sending anything real. Each case study must carry at least one metric —
+   the schema rejects an empty `metrics:` list.
 2. **Nothing auto-publishes.** Drafts land in `output/<id>.followup.html` with
    a ~30-line skim file (`.followup.md`) listing every claim and the data
    point it rests on. A page only goes live through `approve`.

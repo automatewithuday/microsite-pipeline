@@ -53,6 +53,12 @@ describe("proofLibrarySchema", () => {
     expect(() => proofLibrarySchema.parse(bad)).toThrow();
   });
 
+  it("rejects a case study with an empty metrics array", () => {
+    const bad = structuredClone(minimalLibrary);
+    bad.caseStudies[0]!.metrics = [];
+    expect(() => proofLibrarySchema.parse(bad)).toThrow();
+  });
+
   it("rejects duplicate case study ids", () => {
     const bad = structuredClone(minimalLibrary);
     bad.caseStudies.push(structuredClone(bad.caseStudies[0]!));
