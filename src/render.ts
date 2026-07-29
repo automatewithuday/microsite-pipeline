@@ -10,11 +10,17 @@ import { chromium } from "playwright";
 import { RENDER_STRICT, getStepState, type LeadRow } from "./db.js";
 import type { StateBackend } from "./state/types.js";
 import { renderGate, buildMicrositeHtml } from "./pure/microsite.js";
+import { resolveDeckTemplate } from "./pure/deckTemplates.js";
 import { loadProofLibrary } from "./proofLibrary.js";
 import type { ProofLibrary } from "./pure/proofLibrary.js";
 
 const here = dirname(fileURLToPath(import.meta.url));
-const TEMPLATE_PATH = resolve(here, "../templates/microsite/index.html");
+
+// DECK_TEMPLATE is read at call time (not hoisted into db.ts) so tests and
+// per-batch runs can vary it without re-importing the module graph.
+function templatePath(name: string): string {
+  return resolve(here, `../templates/${name}/index.html`);
+}
 
 // Launch headless Chromium, set the interpolated HTML, and print an A4
 // landscape PDF (printBackground so the deck's brand fills render). The
@@ -54,9 +60,11 @@ export async function applyRender(
   }
 
   try {
-    const templateHtml = await readFile(TEMPLATE_PATH, "utf8").catch(() => {
+    const templateName = resolveDeckTemplate(lead, process.env.DECK_TEMPLATE);
+    const tPath = templatePath(templateName);
+    const templateHtml = await readFile(tPath, "utf8").catch(() => {
       throw new Error(
-        `microsite template missing at ${TEMPLATE_PATH}. Run scripts/build-deck-template.ts to regenerate it.`
+        `deck template "${templateName}" missing at ${tPath}. Run scripts/build-deck-template.ts ${templateName} to regenerate it.`
       );
     });
 

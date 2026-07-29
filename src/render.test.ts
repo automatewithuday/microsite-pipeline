@@ -1,4 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
+import { readFile } from "node:fs/promises";
 import type { LeadRow } from "./db.js";
 
 const pdfMock = vi.fn();
@@ -72,6 +73,43 @@ beforeEach(() => {
 });
 
 describe("applyRender", () => {
+  const readFileMock = vi.mocked(readFile);
+
+  it("reads the default template path when nothing selects a variant", async () => {
+    delete process.env.DECK_TEMPLATE;
+    await applyRender(goodLead(), fakePersistence());
+    const paths = readFileMock.mock.calls.map((c) => String(c[0]));
+    expect(paths.some((p) => p.includes("templates/microsite/index.html"))).toBe(true);
+  });
+
+  it("reads the signal template when the lead's template field says so", async () => {
+    delete process.env.DECK_TEMPLATE;
+    await applyRender(goodLead({ template: "microsite-signal" }), fakePersistence());
+    const paths = readFileMock.mock.calls.map((c) => String(c[0]));
+    expect(paths.some((p) => p.includes("templates/microsite-signal/index.html"))).toBe(true);
+  });
+
+  it("falls back to the DECK_TEMPLATE env var", async () => {
+    process.env.DECK_TEMPLATE = "microsite-signal";
+    try {
+      await applyRender(goodLead(), fakePersistence());
+    } finally {
+      delete process.env.DECK_TEMPLATE;
+    }
+    const paths = readFileMock.mock.calls.map((c) => String(c[0]));
+    expect(paths.some((p) => p.includes("templates/microsite-signal/index.html"))).toBe(true);
+  });
+
+  it("marks a step error on an unknown template value", async () => {
+    const p = fakePersistence();
+    await applyRender(goodLead({ template: "typo" }), p);
+    expect(p.markStep).toHaveBeenCalledWith("8442b5a1", "render", {
+      state: "error",
+      error: expect.stringContaining('unknown deck template "typo"'),
+    });
+    expect(p.writeColumn).not.toHaveBeenCalled();
+  });
+
   it("skips when already done and not forced", async () => {
     const p = fakePersistence();
     await applyRender(goodLead({ step_status: { render: { state: "done" } } }), p);
