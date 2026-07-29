@@ -46,7 +46,7 @@ section {
   min-height: 100vh;
   display: flex;
   flex-direction: column;
-  justify-content: center;
+  justify-content: safe center;
   padding: 6vh 6vw;
 }
 .wrap { width: 100%; max-width: 1040px; margin: 0 auto; }
@@ -233,6 +233,10 @@ h2 {
   margin-bottom: 10px;
 }
 .day p { font-size: clamp(12px, 1.35vw, 14px); line-height: 1.6; color: rgba(255, 255, 255, 0.65); }
+
+/* Pin accent-colored elements on dark surfaces to the fixed orange — var(--brand-accent)
+   is only AA-guaranteed vs white (pickReadableAccent gates on white), not vs --ink. */
+.plan .section-num, .day .num, .tier-3 .figure { color: var(--orange); }
 
 /* ── 09 Close ── */
 .close { background: var(--bg-2); }

@@ -431,7 +431,13 @@ export function buildMicrositeHtml(
   const accent = pickReadableAccent(d.brandPrimary, d.brandSecondary);
   if (accent) {
     const style = `<style>:root{--brand-accent: ${accent};}</style>`;
-    html = /<\/body>/i.test(html) ? html.replace(/<\/body>/i, `${style}</body>`) : html + style;
+    // Insert before the LAST "</body>" (the real closing tag), not the first
+    // match: the template's own <style> block documents this injection point
+    // in a CSS comment containing the literal text "</body>", and a naive
+    // first-match .replace() lands the override inside that inert comment,
+    // silently disabling the entire per-lead accent feature.
+    const bodyCloseIdx = html.toLowerCase().lastIndexOf("</body>");
+    html = bodyCloseIdx === -1 ? html + style : html.slice(0, bodyCloseIdx) + style + html.slice(bodyCloseIdx);
   }
 
   return html;

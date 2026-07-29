@@ -514,6 +514,21 @@ describe("buildMicrositeHtml against the real committed template", () => {
     expect(out).not.toContain("--brand-primary:");
   });
 
+  it("injects the brand-accent override before the real closing </body>, not into the template's own explanatory comment", () => {
+    // Regression guard: the real template's <style> block documents this
+    // injection point in a CSS comment that itself contains the literal
+    // text "</body>" ("...appended before </body> when AA-safe..."). A
+    // naive first-match .replace(/<\/body>/i, ...) lands the override
+    // inside that inert comment instead of before the real closing tag,
+    // silently disabling the accent feature for every real lead.
+    const out = buildMicrositeHtml(realLead(), realTemplate);
+    const overrideAt = out.indexOf("--brand-accent: #123456");
+    const lastBodyOpenAt = out.lastIndexOf("<body>");
+    const lastBodyCloseAt = out.lastIndexOf("</body>");
+    expect(overrideAt).toBeGreaterThan(lastBodyOpenAt);
+    expect(overrideAt).toBeLessThan(lastBodyCloseAt);
+  });
+
   it("removes point1 block from the real template when paidSearchPct is null", () => {
     const l = realLead();
     (l.derived as Record<string, unknown>).paidSearchPct = null;
