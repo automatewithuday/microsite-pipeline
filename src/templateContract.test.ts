@@ -45,4 +45,16 @@ describe("deck template contract", () => {
     expect(dcn.match(/<section /g)).toHaveLength(9);
     expect(signal.match(/<section /g)).toHaveLength(9);
   });
+
+  // Staleness lock: the committed index.html must be its index.src.html with
+  // only the font marker replaced. Editing a src without re-running
+  // scripts/build-deck-template.ts fails here instead of shipping stale HTML.
+  it.each(["microsite", "microsite-signal"])("built %s template matches its source", (name) => {
+    const src = read(`../templates/${name}/index.src.html`);
+    const built = read(`../templates/${name}/index.html`);
+    const [head, tail] = src.split("/*__DECK_FONTS__*/");
+    expect(built.startsWith(head!)).toBe(true);
+    expect(built.endsWith(tail!)).toBe(true);
+    expect(built).not.toContain("/*__DECK_FONTS__*/");
+  });
 });
