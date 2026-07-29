@@ -62,7 +62,10 @@ function goodLead(overrides: Record<string, unknown> = {}): LeadRow {
   } as unknown as LeadRow;
 }
 
+const readFileMock = vi.mocked(readFile);
+
 beforeEach(() => {
+  readFileMock.mockClear();
   pdfMock.mockReset().mockResolvedValue(Buffer.from("%PDF-fake"));
   setContentMock.mockReset().mockResolvedValue(undefined);
   closeMock.mockReset().mockResolvedValue(undefined);
@@ -73,7 +76,6 @@ beforeEach(() => {
 });
 
 describe("applyRender", () => {
-  const readFileMock = vi.mocked(readFile);
 
   it("reads the default template path when nothing selects a variant", async () => {
     delete process.env.DECK_TEMPLATE;
