@@ -1,0 +1,484 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>A note for [Company]</title>
+<style>
+/*__DECK_FONTS__*/
+/* Signal system (from roster-site): true white ground, near-black ink, hard
+   2px black borders, radius 0, hard offset shadows. Coral = structural
+   accent; chartreuse marks exactly ONE thing per page. Fixed palette by
+   design: this variant never uses the per-lead brand accent variable. */
+:root {
+  --ink: #111111;
+  --paper: #FFFFFF;
+  --coral: #F26341;
+  --coral-ink: #C2431F;      /* small coral-toned text on white, AA 5.1:1 */
+  --coral-soft: rgba(242, 99, 65, 0.08);
+  --signal: #D9FB3F;
+  --muted: #3D3D3D;
+  --surface-2: #F5F5F4;
+  --on-coral-muted: #4A1204; /* small text on a coral fill, AA */
+  --shadow-hard: 4px 4px 0 var(--ink);
+  --shadow-hard-lg: 7px 7px 0 var(--ink);
+  --font-display: 'Archivo Expanded', 'Archivo', system-ui, sans-serif;
+  --font-body: 'Archivo', system-ui, -apple-system, sans-serif;
+  --font-mono: 'Geist Mono', ui-monospace, 'Courier New', monospace;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+html, body { background: var(--paper); color: var(--ink); }
+body {
+  font-family: var(--font-body);
+  line-height: 1.5;
+  -webkit-font-smoothing: antialiased;
+  -webkit-print-color-adjust: exact;
+  print-color-adjust: exact;
+  text-rendering: optimizeLegibility;
+}
+img { display: block; max-width: 100%; }
+a { color: inherit; text-decoration: none; }
+
+section {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  justify-content: safe center;
+  padding: 6vh 6vw;
+}
+.wrap { width: 100%; max-width: 1040px; margin: 0 auto; }
+
+/* The one chartreuse highlight per page. */
+.mark {
+  background: var(--signal);
+  color: var(--ink);
+  padding: 2px 10px;
+  -webkit-box-decoration-break: clone;
+  box-decoration-break: clone;
+}
+
+.eyebrow, .section-num {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--coral-ink);
+  margin-bottom: 18px;
+}
+h2 {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: clamp(28px, 3.4vw, 44px);
+  line-height: 1.02;
+  letter-spacing: 0;
+  text-transform: uppercase;
+  margin-bottom: 14px;
+  text-wrap: balance;
+}
+.deck {
+  font-size: clamp(14px, 1.5vw, 17px);
+  line-height: 1.6;
+  color: var(--muted);
+  max-width: 640px;
+  margin-bottom: 40px;
+}
+
+/* ── 01 Cover ── */
+.cover .lockup { display: flex; align-items: center; gap: 22px; margin-bottom: 7vh; }
+.cover .lockup .me { font-weight: 700; font-size: 19px; letter-spacing: -0.01em; }
+.cover .lockup .x { font-family: var(--font-body); font-weight: 700; font-size: 20px; color: var(--coral); }
+.cover .lockup img { height: 36px; width: auto; object-fit: contain; }
+.cover .eyebrow { color: var(--ink); }
+.cover h1 {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: clamp(40px, 5.2vw, 66px);
+  line-height: 0.98;
+  letter-spacing: -0.01em;
+  text-transform: uppercase;
+  max-width: 24ch;
+  margin-bottom: 5vh;
+  text-wrap: balance;
+}
+/* Poster stroke treatment: outline carries the letterform, fill transparent. */
+.cover h1 em { font-style: normal; color: transparent; -webkit-text-stroke: 2px var(--ink); }
+.cover .prepared { border-top: 2px solid var(--ink); padding-top: 22px; max-width: 460px; }
+.cover .prepared .who { font-weight: 500; font-size: 15px; }
+.cover .prepared .tag { font-family: var(--font-mono); font-size: 12px; color: var(--muted); margin-top: 4px; }
+
+/* ── 02 Reading: auto-renumbering rows ── */
+.read-blocks { counter-reset: reading; }
+.read-block {
+  counter-increment: reading;
+  display: grid;
+  grid-template-columns: 56px 200px 1fr;
+  gap: 28px;
+  padding: 20px 0;
+  border-top: 2px solid var(--ink);
+  align-items: start;
+}
+.read-block:last-child { border-bottom: 2px solid var(--ink); }
+.read-block .num::before { content: "0" counter(reading); }
+.read-block .num {
+  font-family: var(--font-mono);
+  font-size: 13px;
+  color: var(--coral-ink);
+  padding-top: 3px;
+  letter-spacing: 0.06em;
+}
+.read-block .label-col {
+  font-weight: 700;
+  font-size: 11px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+.read-block .label-col .sub {
+  display: block;
+  font-family: var(--font-mono);
+  font-weight: 400;
+  color: var(--coral-ink);
+  margin-top: 4px;
+}
+/* Page 2's single highlight: the strongest read's sub-label. Degrades with
+   the block: if point1 is dropped, the page simply has no highlight. */
+.read-block[data-slot="point1"] .label-col .sub {
+  display: inline-block;
+  background: var(--signal);
+  color: var(--ink);
+  padding: 2px 8px;
+  margin-top: 6px;
+}
+.read-block .body { font-size: clamp(14px, 1.6vw, 17px); line-height: 1.6; color: var(--muted); }
+
+/* ── 03 ICP ── */
+.icp-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 28px; }
+.icp-card { background: var(--paper); border: 2px solid var(--ink); padding: 24px 26px; box-shadow: var(--shadow-hard); }
+.icp-card h3 {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: clamp(17px, 2vw, 21px);
+  line-height: 1.15;
+  margin-bottom: 18px;
+}
+.icp-row { display: grid; grid-template-columns: 86px 1fr; gap: 14px; padding: 9px 0; border-top: 1px solid var(--ink); }
+.icp-row .k {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--coral-ink);
+  padding-top: 3px;
+}
+.icp-row .v { font-size: clamp(13px, 1.4vw, 15px); line-height: 1.5; color: var(--muted); }
+
+/* ── 04 Market funnel ── */
+.funnel { display: flex; flex-direction: column; gap: 12px; }
+.tier { border: 2px solid var(--ink); padding: 16px 26px; display: flex; align-items: baseline; gap: 24px; background: var(--paper); }
+.tier .figure { font-family: var(--font-display); font-weight: 700; font-size: clamp(26px, 3.2vw, 42px); line-height: 1; }
+.tier .desc { font-size: clamp(13px, 1.5vw, 16px); color: var(--muted); }
+.tier-2 { width: 76%; background: var(--surface-2); }
+.tier-3 { width: 52%; background: var(--ink); border-color: var(--ink); }
+/* Page 4's single highlight: the figure worth pursuing this year. */
+.tier-3 .figure { background: var(--signal); color: var(--ink); padding: 2px 12px; }
+.tier-3 .desc { color: rgba(255, 255, 255, 0.75); }
+.footnote { margin-top: 26px; font-family: var(--font-mono); font-size: 11px; color: var(--muted); }
+
+/* ── 05 Openings ── */
+.openings { counter-reset: opening; }
+.opening {
+  counter-increment: opening;
+  display: grid;
+  grid-template-columns: 110px 1fr;
+  gap: 30px;
+  padding: 26px 0;
+  border-top: 2px solid var(--ink);
+  align-items: start;
+}
+.opening:last-child { border-bottom: 2px solid var(--ink); }
+.opening .num::before { content: "0" counter(opening); }
+.opening .num { font-family: var(--font-display); font-weight: 700; font-size: clamp(28px, 3vw, 40px); line-height: 1; color: var(--coral); }
+/* Page 5's single highlight: the first opening's number. */
+.opening:first-child .num { justify-self: start; background: var(--signal); color: var(--ink); padding: 4px 12px; }
+.opening .body { font-size: clamp(15px, 1.7vw, 18px); line-height: 1.6; color: var(--muted); }
+
+/* ── 06 Stack ── */
+.stack p.pitch { font-size: clamp(15px, 1.7vw, 18px); line-height: 1.65; color: var(--muted); max-width: 58ch; margin-bottom: 36px; }
+.stack p.pitch strong { color: var(--ink); font-weight: 700; }
+.chips { display: flex; flex-wrap: wrap; gap: 14px; }
+.chip {
+  font-family: var(--font-mono);
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  border: 2px solid var(--ink);
+  padding: 10px 18px;
+  box-shadow: var(--shadow-hard);
+}
+
+/* ── 07 Work ── */
+.cases { display: grid; grid-template-columns: 1fr 1fr; gap: 32px; }
+.case { border: 2px solid var(--ink); padding: 24px 26px; display: flex; flex-direction: column; gap: 12px; box-shadow: var(--shadow-hard-lg); background: var(--paper); }
+.case .client {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--coral-ink);
+}
+.case h3 {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: clamp(16px, 1.9vw, 21px);
+  line-height: 1.15;
+  text-wrap: balance;
+}
+.case .approach { font-size: clamp(12px, 1.35vw, 14px); line-height: 1.6; color: var(--muted); }
+.case .metric { margin-top: auto; border-top: 2px solid var(--ink); padding-top: 12px; }
+.case .metric .figure { font-family: var(--font-display); font-weight: 700; font-size: clamp(22px, 2.6vw, 30px); line-height: 1.1; color: var(--coral); margin-bottom: 6px; }
+/* Page 7's single highlight: the lead case's metric figure. Survives
+   degradation: a 1-case library keeps case1 and drops case2. */
+.case[data-slot="case1"] .metric .figure { display: inline-block; background: var(--signal); color: var(--ink); padding: 2px 10px; }
+.case .metric .desc { font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); }
+
+/* ── 08 Thirty days ── */
+.days { display: grid; grid-template-columns: repeat(4, 1fr); gap: 22px; }
+.day { border-top: 4px solid var(--ink); padding-top: 14px; }
+.day .num {
+  font-family: var(--font-mono);
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--coral-ink);
+  margin-bottom: 10px;
+}
+.day p { font-size: clamp(12px, 1.35vw, 14px); line-height: 1.6; color: var(--muted); }
+
+/* ── 09 Close: full coral, ink text, CTA on an ink box ── */
+.close { background: var(--coral); }
+.close .section-num { color: var(--ink); }
+.close .pull {
+  font-family: var(--font-display);
+  font-weight: 700;
+  font-size: clamp(30px, 4.2vw, 52px);
+  line-height: 1.02;
+  text-transform: uppercase;
+  max-width: 22ch;
+  margin-bottom: 28px;
+  text-wrap: balance;
+}
+.close .pull em { font-style: normal; color: transparent; -webkit-text-stroke: 2px var(--ink); }
+.close p.next { font-size: clamp(14px, 1.6vw, 17px); line-height: 1.65; color: var(--on-coral-muted); max-width: 56ch; margin-bottom: 34px; }
+/* Page 9's single highlight: chartreuse CTA text on an INK box, so the
+   chartreuse never sits directly on the coral page fill. */
+.btn-primary {
+  display: inline-block;
+  font-weight: 700;
+  font-size: 15px;
+  letter-spacing: 0.02em;
+  padding: 16px 30px;
+  background: var(--ink);
+  color: var(--signal);
+  box-shadow: 5px 5px 0 var(--on-coral-muted);
+}
+.signature { margin-top: 7vh; padding-top: 22px; border-top: 2px solid var(--ink); display: flex; justify-content: space-between; align-items: flex-end; }
+.signature .name { font-family: var(--font-display); font-weight: 700; font-size: 20px; }
+.signature .sig-meta { font-family: var(--font-mono); font-size: 10px; letter-spacing: 0.14em; text-transform: uppercase; color: var(--on-coral-muted); text-align: right; }
+
+@page { size: A4 landscape; margin: 0; }
+@media print {
+  html, body { background: #fff; }
+  section {
+    break-after: page;
+    page-break-after: always;
+    break-inside: avoid;
+    page-break-inside: avoid;
+    min-height: 100vh;
+    height: 100vh;
+    overflow: hidden;
+  }
+  section:last-of-type { break-after: auto; page-break-after: auto; }
+}
+</style>
+</head>
+<body>
+
+<!-- ══ 01 / COVER ══ -->
+<section class="cover" data-label="Cover" data-screen-label="01 Cover">
+  <div class="wrap">
+    <div class="lockup">
+      <div class="me">automatewith<span style="color:var(--coral-ink);">uday</span></div>
+      <div data-slot="logo" style="display:flex;align-items:center;gap:22px;">
+        <div class="x">x</div>
+        <img src="[LOGO_URL]" alt="[Company] logo">
+      </div>
+    </div>
+    <div class="eyebrow"><span class="mark">A note for [Company]</span></div>
+    <h1>Where [Company]'s pipeline could go, <em>and what changes in the first thirty days.</em></h1>
+    <div class="prepared">
+      <div class="who">Prepared by Uday Singh Kang.</div>
+      <div class="tag">GTM Engineering, not GTM guesswork.</div>
+    </div>
+  </div>
+</section>
+
+<!-- ══ 02 / READING ══ -->
+<section data-label="Reading" data-screen-label="02 Reading">
+  <div class="wrap">
+    <div class="section-num">02 / Reading</div>
+    <h2>How I'm reading [Company].</h2>
+    <p class="deck">What the public data says, and what I'd act on. Each point shaped this note.</p>
+    <div class="read-blocks">
+      <div class="read-block" data-slot="point1">
+        <div class="num"></div>
+        <div class="label-col">Traffic<span class="sub">Paid search</span></div>
+        <div class="body">[Point 1]</div>
+      </div>
+      <div class="read-block" data-slot="point2">
+        <div class="num"></div>
+        <div class="label-col">Founder<span class="sub">LinkedIn reach</span></div>
+        <div class="body">[Point 2]</div>
+      </div>
+      <div class="read-block">
+        <div class="num"></div>
+        <div class="label-col">Ads<span class="sub">Paid footprint</span></div>
+        <div class="body">[Point 3]</div>
+      </div>
+      <div class="read-block">
+        <div class="num"></div>
+        <div class="label-col">Team<span class="sub">Sales capacity</span></div>
+        <div class="body">[Point 4]</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══ 03 / ICP ══ -->
+<section data-label="ICP" data-screen-label="03 ICP">
+  <div class="wrap">
+    <div class="section-num">03 / ICP</div>
+    <h2>Who [Company] should be selling to.</h2>
+    <p class="deck">Two segments where <span class="mark">the pain is sharpest</span> and the buyer is reachable.</p>
+    <div class="icp-grid">
+      <div class="icp-card">
+        <h3>[Segment 1]</h3>
+        <div class="icp-row"><div class="k">Profile</div><div class="v">[Company Characteristic 1]</div></div>
+        <div class="icp-row"><div class="k">Pain</div><div class="v">[Key Pain Point 1]</div></div>
+        <div class="icp-row"><div class="k">Buyer</div><div class="v">[Primary Buyer 1]</div></div>
+        <div class="icp-row"><div class="k">Need</div><div class="v">[Differentiating Need 1]</div></div>
+      </div>
+      <div class="icp-card">
+        <h3>[Segment 2]</h3>
+        <div class="icp-row"><div class="k">Profile</div><div class="v">[Company Characteristic 2]</div></div>
+        <div class="icp-row"><div class="k">Pain</div><div class="v">[Key Pain Point 2]</div></div>
+        <div class="icp-row"><div class="k">Buyer</div><div class="v">[Primary Buyer 2]</div></div>
+        <div class="icp-row"><div class="k">Need</div><div class="v">[Differentiating Need 2]</div></div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══ 04 / MARKET ══ -->
+<section data-label="Market" data-screen-label="04 Market">
+  <div class="wrap">
+    <div class="section-num">04 / Market</div>
+    <h2>The market is bigger than your pipeline.</h2>
+    <p class="deck">Sized from public market data and your positioning.</p>
+    <div class="funnel">
+      <div class="tier tier-1"><div class="figure">[Z]</div><div class="desc">companies match your ICP</div></div>
+      <div class="tier tier-2"><div class="figure">[Y]</div><div class="desc">companies reachable with clean data</div></div>
+      <div class="tier tier-3"><div class="figure">[X]</div><div class="desc">companies worth pursuing this year</div></div>
+    </div>
+    <p class="footnote">Estimates, not audits — the point is the order of magnitude.</p>
+  </div>
+</section>
+
+<!-- ══ 05 / OPENINGS ══ -->
+<section data-label="Openings" data-screen-label="05 Openings">
+  <div class="wrap">
+    <div class="section-num">05 / Openings</div>
+    <h2>Three openings I'd act on in week one.</h2>
+    <p class="deck">Live signals, not hypotheticals. Each one maps to a play that ships in days.</p>
+    <div class="openings">
+      <div class="opening"><div class="num"></div><div class="body">[Signal 1]</div></div>
+      <div class="opening"><div class="num"></div><div class="body">[Signal 2]</div></div>
+      <div class="opening"><div class="num"></div><div class="body">[Signal 3]</div></div>
+    </div>
+  </div>
+</section>
+
+<!-- ══ 06 / STACK ══ -->
+<section class="stack" data-label="Stack" data-screen-label="06 Stack">
+  <div class="wrap">
+    <div class="section-num">06 / Stack</div>
+    <h2>Runs inside [CRM], not beside it.</h2>
+    <p class="pitch">The engine is built in your stack. Your workspace, your seats, your data. Enrichment, scoring, and outbound flow straight into <strong>[CRM]</strong> — <span class="mark">nothing held hostage in my tools.</span></p>
+    <div class="chips">
+      <div class="chip">Supabase</div>
+      <div class="chip">Claude Code</div>
+      <div class="chip">Apify</div>
+      <div class="chip">Smartlead</div>
+    </div>
+  </div>
+</section>
+
+<!-- ══ 07 / WORK ══ -->
+<section data-label="Work" data-screen-label="07 Work" data-slot="work">
+  <div class="wrap">
+    <div class="section-num">07 / Work</div>
+    <h2>The work, where it's relevant.</h2>
+    <p class="deck">Picked for relevance to [Company]. Full case studies on the call.</p>
+    <div class="cases">
+      <article class="case" data-slot="case1">
+        <div class="client">[Case Client 1]</div>
+        <h3>[Case Problem 1]</h3>
+        <p class="approach">[Case Approach 1]</p>
+        <div class="metric">
+          <div class="figure">[Case Metric Value 1]</div>
+          <div class="desc">[Case Metric Label 1]</div>
+        </div>
+      </article>
+      <article class="case" data-slot="case2">
+        <div class="client">[Case Client 2]</div>
+        <h3>[Case Problem 2]</h3>
+        <p class="approach">[Case Approach 2]</p>
+        <div class="metric">
+          <div class="figure">[Case Metric Value 2]</div>
+          <div class="desc">[Case Metric Label 2]</div>
+        </div>
+      </article>
+    </div>
+  </div>
+</section>
+
+<!-- ══ 08 / THIRTY DAYS ══ -->
+<section class="plan" data-label="Plan" data-screen-label="08 Thirty days" data-slot="plan30">
+  <div class="wrap">
+    <div class="section-num">08 / Thirty days</div>
+    <h2>What the first <span class="mark">thirty days</span> look like.</h2>
+    <p class="deck">Concrete output, not orientation.</p>
+    <div class="days">
+      <div class="day" data-slot="plan-phase-1"><div class="num">01 / [Plan Title 1]</div><p>[Plan Deliverables 1]</p></div>
+      <div class="day" data-slot="plan-phase-2"><div class="num">02 / [Plan Title 2]</div><p>[Plan Deliverables 2]</p></div>
+      <div class="day" data-slot="plan-phase-3"><div class="num">03 / [Plan Title 3]</div><p>[Plan Deliverables 3]</p></div>
+      <div class="day" data-slot="plan-phase-4"><div class="num">04 / [Plan Title 4]</div><p>[Plan Deliverables 4]</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- ══ 09 / CLOSE ══ -->
+<section class="close" data-label="Close" data-screen-label="09 Close">
+  <div class="wrap">
+    <div class="section-num">09 / Close</div>
+    <div class="pull">Let's build this <em>for [Company].</em></div>
+    <p class="next">15 minutes. I'll walk through this exact data live and show what the first thirty days look like inside your stack.</p>
+    <div><a class="btn-primary" href="https://cal.com/uday-kang/15min">Book 15 minutes →</a></div>
+    <div class="signature">
+      <div class="name">Uday Kang</div>
+      <div class="sig-meta">GTM Engineering<br>Martechs · martechs.io</div>
+    </div>
+  </div>
+</section>
+
+</body>
+</html>
