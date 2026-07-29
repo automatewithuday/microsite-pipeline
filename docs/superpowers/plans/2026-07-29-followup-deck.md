@@ -48,7 +48,7 @@ const minimalLibrary = {
     positioning: "Fractional CMO. Strategy & architecture.",
     locationLine: "Pune based, same time zone, no coordination tax.",
     calUrl: "https://cal.com/uday-kang/15min",
-    repoLinks: ["https://github.com/udaykang-byte/gtm-flywheel"],
+    repoLinks: ["https://github.com/automatewithuday/gtm-flywheel"],
   },
   caseStudies: [
     {
@@ -265,8 +265,8 @@ profile:
   locationLine: "Pune based. Same time zone, in-person working sessions, no coordination tax."
   calUrl: "https://cal.com/uday-kang/15min"
   repoLinks:
-    - "https://github.com/udaykang-byte/gtm-flywheel"
-    - "https://github.com/udaykang-byte/gtm-os-kit"
+    - "https://github.com/automatewithuday/gtm-flywheel"
+    - "https://github.com/automatewithuday/gtm-os-kit"
 
 caseStudies:
   - id: dailypay

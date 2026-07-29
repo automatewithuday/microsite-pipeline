@@ -2,7 +2,7 @@
 
 ## Reporting a vulnerability
 
-Please report security issues privately via [GitHub Security Advisories](https://github.com/udaykang-byte/microsite-pipeline/security/advisories/new) rather than opening a public issue.
+Please report security issues privately via [GitHub Security Advisories](https://github.com/automatewithuday/microsite-pipeline/security/advisories/new) rather than opening a public issue.
 
 Include what you found, how to reproduce it, and what an attacker could do with it. You'll get an acknowledgement within a few days.
 

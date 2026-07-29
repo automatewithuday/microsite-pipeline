@@ -396,7 +396,7 @@ git commit -m "Add subset Archivo + Geist Mono woff2 for the Signal template"
 - Test: `src/templateContract.test.ts`
 
 **Interfaces:**
-- Consumes: fonts from Task 3, builder from Task 2. Reference design: roster-site `app/globals.css` + `PRODUCT.md` (clone `github.com/udaykang-byte/roster-site` to a temp dir if visual reference is needed).
+- Consumes: fonts from Task 3, builder from Task 2. Reference design: roster-site `app/globals.css` + `PRODUCT.md` (clone `github.com/automatewithuday/roster-site` to a temp dir if visual reference is needed).
 - Produces: `templates/microsite-signal/index.html` that `render.ts` (Task 5) reads. Contract locked by the test: identical token + data-slot sets vs the DCN `index.src.html`.
 
 - [ ] **Step 1: Write the failing contract test**

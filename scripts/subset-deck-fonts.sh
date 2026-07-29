@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # One-off: subset DCN-Deck's TTFs to latin woff2 for the deck template.
 # Re-run only if the source fonts or the subset ranges change.
-# Needs uv (uvx) and a clone of https://github.com/udaykang-byte/DCN-Deck.
+# Needs uv (uvx) and a clone of https://github.com/automatewithuday/DCN-Deck.
 # Usage: scripts/subset-deck-fonts.sh /path/to/DCN-Deck
 set -euo pipefail
 SRC_DIR="${1:?usage: subset-deck-fonts.sh /path/to/DCN-Deck}/fonts"

@@ -29,13 +29,13 @@
 - Create: `templates/microsite/fonts/*.woff2` (10 files, generated then committed)
 
 **Interfaces:**
-- Consumes: a local clone of https://github.com/udaykang-byte/DCN-Deck (TTFs in `fonts/`)
+- Consumes: a local clone of https://github.com/automatewithuday/DCN-Deck (TTFs in `fonts/`)
 - Produces: exactly these 10 files under `templates/microsite/fonts/`, consumed by Task 2's `FONTS` table: `fraunces-300.woff2`, `fraunces-300i.woff2`, `fraunces-400.woff2`, `fraunces-400i.woff2`, `fraunces-600.woff2`, `fraunces-600i.woff2`, `plex-400.woff2`, `plex-500.woff2`, `plex-600.woff2`, `plex-cond-600.woff2`
 
 - [ ] **Step 1: Clone the DCN-Deck reference** (skip if already present)
 
 ```bash
-git clone --depth 1 https://github.com/udaykang-byte/DCN-Deck /tmp/DCN-Deck
+git clone --depth 1 https://github.com/automatewithuday/DCN-Deck /tmp/DCN-Deck
 ```
 
 - [ ] **Step 2: Write `scripts/subset-deck-fonts.sh`**
@@ -44,7 +44,7 @@ git clone --depth 1 https://github.com/udaykang-byte/DCN-Deck /tmp/DCN-Deck
 #!/usr/bin/env bash
 # One-off: subset DCN-Deck's TTFs to latin woff2 for the deck template.
 # Re-run only if the source fonts or the subset ranges change.
-# Needs uv (uvx) and a clone of https://github.com/udaykang-byte/DCN-Deck.
+# Needs uv (uvx) and a clone of https://github.com/automatewithuday/DCN-Deck.
 # Usage: scripts/subset-deck-fonts.sh /path/to/DCN-Deck
 set -euo pipefail
 SRC_DIR="${1:?usage: subset-deck-fonts.sh /path/to/DCN-Deck}/fonts"

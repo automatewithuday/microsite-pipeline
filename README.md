@@ -1,6 +1,6 @@
 # Microsite Pipeline
 
-[![CI](https://github.com/udaykang-byte/microsite-pipeline/actions/workflows/ci.yml/badge.svg)](https://github.com/udaykang-byte/microsite-pipeline/actions/workflows/ci.yml)
+[![CI](https://github.com/automatewithuday/microsite-pipeline/actions/workflows/ci.yml/badge.svg)](https://github.com/automatewithuday/microsite-pipeline/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 
 Turn a single sales lead into a personalized, on-brand 8-page sales microsite (a PDF plus an HTML page) that pitches GTM Engineering services to that specific company.

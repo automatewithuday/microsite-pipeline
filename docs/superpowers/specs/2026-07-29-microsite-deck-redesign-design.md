@@ -9,7 +9,7 @@ ColdIQ PDFs)
 ## Goal
 
 Rebuild the per-lead microsite deck on the design system of
-[udaykang-byte/DCN-Deck](https://github.com/udaykang-byte/DCN-Deck): Fraunces
+[automatewithuday/DCN-Deck](https://github.com/automatewithuday/DCN-Deck): Fraunces
 display serif + IBM Plex Sans, white/ink/signal-orange, first-person
 founder-led voice, ending with a 30-day plan before the ask. Roster-site's
 Signal system is a separate, later template variant — out of scope here.

@@ -6,7 +6,7 @@ const minimalLibrary = {
     positioning: "Fractional CMO. Strategy & architecture.",
     locationLine: "Pune based, same time zone, no coordination tax.",
     calUrl: "https://cal.com/uday-kang/15min",
-    repoLinks: ["https://github.com/udaykang-byte/gtm-flywheel"],
+    repoLinks: ["https://github.com/automatewithuday/gtm-flywheel"],
   },
   caseStudies: [
     {

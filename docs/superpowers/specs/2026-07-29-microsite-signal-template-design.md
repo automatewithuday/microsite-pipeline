@@ -8,7 +8,7 @@
 ## Goal
 
 A second deck template variant, `microsite-signal`, porting the Signal design
-system from roster-site (github.com/udaykang-byte/roster-site —
+system from roster-site (github.com/automatewithuday/roster-site —
 `app/globals.css` + `PRODUCT.md` + current Next.js components; the legacy
 warm-cream file is explicitly rejected as reference). Business purpose: A/B
 the two deck styles per lead and measure reply/meeting rates per variant.

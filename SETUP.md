@@ -50,7 +50,7 @@ The repo ships a `setup` skill at [`.claude/skills/setup/`](.claude/skills/setup
 **Step 1.** Clone and open the repo:
 
 ```bash
-git clone https://github.com/udaykang-byte/microsite-pipeline.git
+git clone https://github.com/automatewithuday/microsite-pipeline.git
 cd microsite-pipeline
 claude
 ```
@@ -81,7 +81,7 @@ Generate a microsite for https://www.linkedin.com/in/some-founder at acme.com
 
 If a step errors, ask Claude to look at it — every step records its error, and it can read them all at once.
 
-> **On keys:** the skill tells the agent never to print, echo, or `cat` a key value, and never to write real keys into `.env.example`. If you ever see it about to, stop it — that's a bug, please [open an issue](https://github.com/udaykang-byte/microsite-pipeline/issues).
+> **On keys:** the skill tells the agent never to print, echo, or `cat` a key value, and never to write real keys into `.env.example`. If you ever see it about to, stop it — that's a bug, please [open an issue](https://github.com/automatewithuday/microsite-pipeline/issues).
 
 ---
 
@@ -92,7 +92,7 @@ Five commands. Nothing here assumes any tooling beyond Node and git.
 ### Step 1 — Clone and install
 
 ```bash
-git clone https://github.com/udaykang-byte/microsite-pipeline.git
+git clone https://github.com/automatewithuday/microsite-pipeline.git
 cd microsite-pipeline
 npm ci
 ```
