@@ -48,7 +48,7 @@ export const DECK_TEMPLATES: Record<string, DeckTemplateDef> = {
 export const DEFAULT_DECK_TEMPLATE = "microsite";
 
 export function assertDeckTemplateName(name: string): void {
-  if (!(name in DECK_TEMPLATES)) {
+  if (!Object.hasOwn(DECK_TEMPLATES, name)) {
     throw new Error(
       `unknown deck template "${name}" (valid: ${Object.keys(DECK_TEMPLATES).join(", ")})`
     );

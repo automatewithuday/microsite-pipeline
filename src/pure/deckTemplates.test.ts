@@ -41,6 +41,17 @@ describe("assertDeckTemplateName", () => {
       'unknown deck template "signal" (valid: microsite, microsite-signal)'
     );
   });
+  it("rejects prototype property names", () => {
+    expect(() => assertDeckTemplateName("toString")).toThrow(
+      'unknown deck template "toString" (valid: microsite, microsite-signal)'
+    );
+    expect(() => assertDeckTemplateName("constructor")).toThrow(
+      'unknown deck template "constructor" (valid: microsite, microsite-signal)'
+    );
+    expect(() => assertDeckTemplateName("hasOwnProperty")).toThrow(
+      'unknown deck template "hasOwnProperty" (valid: microsite, microsite-signal)'
+    );
+  });
 });
 
 describe("resolveDeckTemplate", () => {
@@ -66,5 +77,10 @@ describe("resolveDeckTemplate", () => {
   });
   it("throws on an unknown env value", () => {
     expect(() => resolveDeckTemplate(lead(), "typo")).toThrow('unknown deck template "typo"');
+  });
+  it("throws on prototype property names in lead", () => {
+    expect(() => resolveDeckTemplate(lead({ template: "toString" }), undefined)).toThrow(
+      'unknown deck template "toString"'
+    );
   });
 });
