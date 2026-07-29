@@ -24,7 +24,8 @@ function leadLabel(lead: LeadRow): string {
     "(no company)";
   const status = lead.step_status ?? {};
   const done = Object.values(status).filter((s) => s.state === "done").length;
-  return `${lead.id}  ${name}  (${done}/${Object.keys(status).length} steps done)`;
+  const template = typeof lead.template === "string" && lead.template ? `  [${lead.template}]` : "";
+  return `${lead.id}  ${name}  (${done}/${Object.keys(status).length} steps done)${template}`;
 }
 
 async function listLeads(): Promise<void> {

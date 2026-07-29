@@ -14,6 +14,10 @@ export interface SeedLead {
   last_name?: string | null;
   company?: string | null;
   position?: string | null;
+  // Optional deck template variant for this lead (validated against
+  // DECK_TEMPLATES at seed time). Omitted — not null — when the CSV has no
+  // template column, so re-seeding never wipes an existing assignment.
+  template?: string;
   // Optional pre-seeded step column, used by the ad-hoc single-lead path to
   // seed company_data.merged when Deepline is absent (graceful degradation).
   company_data?: unknown;

@@ -5,6 +5,7 @@
 import { existsSync, readFileSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { assertDeckTemplateName } from "../src/pure/deckTemplates.js";
 import { getStateBackend } from "../src/state/index.js";
 
 const state = getStateBackend();
@@ -72,6 +73,7 @@ interface ParsedLead {
   last_name: string | null;
   company: string | null;
   position: string | null;
+  template?: string;
 }
 
 function toLeads(rows: string[][]): { leads: ParsedLead[]; skipped: number[] } {
@@ -84,6 +86,7 @@ function toLeads(rows: string[][]): { leads: ParsedLead[]; skipped: number[] } {
   const lastNameIdx = headers.indexOf("last_name");
   const companyIdx = headers.indexOf("company");
   const positionIdx = headers.indexOf("position");
+  const templateIdx = headers.indexOf("template");
 
   if (urlIdx === -1) {
     throw new Error(
@@ -103,13 +106,19 @@ function toLeads(rows: string[][]): { leads: ParsedLead[]; skipped: number[] } {
       return;
     }
 
-    leads.push({
+    const lead: ParsedLead = {
       linkedin_url: linkedinUrl,
       first_name: firstNameIdx >= 0 ? row[firstNameIdx]?.trim() || null : null,
       last_name: lastNameIdx >= 0 ? row[lastNameIdx]?.trim() || null : null,
       company: companyIdx >= 0 ? row[companyIdx]?.trim() || null : null,
       position: positionIdx >= 0 ? row[positionIdx]?.trim() || null : null,
-    });
+    };
+    const template = templateIdx >= 0 ? row[templateIdx]?.trim() : "";
+    if (template) {
+      assertDeckTemplateName(template); // throws with the valid names on a typo
+      lead.template = template;
+    }
+    leads.push(lead);
   });
 
   return { leads, skipped };
@@ -119,7 +128,7 @@ async function main() {
   if (!existsSync(csvPath)) {
     console.error(
       "No leads.csv found in the repo root. Add one with a header row " +
-        "(url, first_name, last_name, company, position) and rerun this script."
+        "(url, first_name, last_name, company, position, template) and rerun this script."
     );
     process.exitCode = 1;
     return;
